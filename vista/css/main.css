@@ -21,6 +21,17 @@ html {
 
 label {
     color: white;
+    font-size: 1.1rem; /* Un tamaño de fuente más grande */
+    margin-bottom: 10px; /* Espacio debajo de la etiqueta */
+    text-align: left; /* Alineación a la izquierda */
+    display: block; /* Para asegurarte de que cada etiqueta ocupe una línea completa */
+    font-weight: bold; /* Para hacer las etiquetas más destacadas */
+    transition: color 0.3s ease;
+    text-align: center;
+}
+
+label:hover {
+    color: #f2f2f2; /* Cambia el color cuando el usuario pasa el ratón */
 }
 
 main {
