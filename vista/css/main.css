@@ -32,6 +32,7 @@ label {
 
 label:hover {
     color: #f2f2f2; /* Cambia el color cuando el usuario pasa el ratón */
+    transition: 0.2s;
 }
 
 main {
@@ -212,11 +213,13 @@ td {
 
 tr:nth-child(even) td {
     background-color: rgba(255, 255, 255, 0.1);
+    transition: 0.2s;
 }
 
 tr:hover td {
     background-color: #c0392b;
     cursor: pointer;
+    transition: 0.2s;
 }
 
 
@@ -292,3 +295,40 @@ table {
 }
 
 /* Opcional: Estilo para filas alternadas */
+
+#divContenedorElecciones{
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+#divContenedorElecciones > * {
+    margin: 10px;
+    border: 1px solid white;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.divEleccion:hover {
+    background-color: #9D3435;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.divEleccion {
+    transition: 0.2s;
+}
+
+.modalInsert {
+    display: none; /* 🔹 Asegura que esté oculto al inicio */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}

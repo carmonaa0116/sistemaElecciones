@@ -1,12 +1,14 @@
-import { getDnisCenso, insertarPartido } from "./apiAdmin.js";
+
+import { getDnisCenso, insertarPartido, updatePartido } from "./apiAdmin.js";
 import { getIdElecciones } from "./apiAdmin.js";
 import { getLocalidades } from "./apiAdmin.js";
-import { createSubmitButton } from "./generarContenidoSinEleccion.js";
+import { createDeleteButton, createInput, createSubmitButton } from "./generarContenidoSinEleccion.js";
 import { createCloseButton } from "./generarContenidoSinEleccion.js";
 import { getCandidatosNombre } from "./apiAdmin.js";
 import { insertarCandidato } from "./apiAdmin.js";
 import { getNombrePartidos } from "./apiAdmin.js";
 import { getPartidos } from "./apiAdmin.js";
+import { deletePartido } from "./apiAdmin.js";
 
 export async function generarContenidoEleccionPartidos() {
     const main = document.querySelector('main');
@@ -51,23 +53,20 @@ async function createModalInsert() {
 }
 
 function createSelectDnis(jsonDni, nombreSelect) {
-
+    console.log('Ha entrado en createSelectDnis');
     const select = document.createElement('select');
-    select.name = `select-opciones-${nombreSelect}`;
-
-    // Opción por defecto
+    select.name =`select-opciones-${nombreSelect}`;
     const defaultOption = document.createElement('option');
-    defaultOption.value = ""; // Valor null en HTML se representa con una cadena vacía
+    defaultOption.value = "";
     defaultOption.textContent = `Selecciona ${nombreSelect}`;
     defaultOption.selected = true;
     defaultOption.disabled = true;
     select.appendChild(defaultOption);
-
-    for(let i = 0; i < jsonDni.length; i++) {
-        console.log(jsonDni[i].dni);
+    for(let i = 0; i < jsonDni.value.length; i++) {
+        console.log(jsonDni.value[i].dni);
         const option = document.createElement('option');
-        option.value = jsonDni[i].dni;
-        option.textContent = jsonDni[i].dni;
+        option.value = jsonDni.value[i].dni;
+        option.textContent = jsonDni.value[i].dni;
         select.appendChild(option);
     }
     console.log(select);
@@ -135,7 +134,7 @@ function createSelectPreferencia() {
         const option = document.createElement('option');
         option.id = `preferencia-${preferencia}`;
         option.name = `preferencia-${preferencia}`;
-        option.textContent = preferencia;
+        option.textContent = 'preferencia';
         select.appendChild(option);
     });
 
@@ -183,20 +182,19 @@ async function createFormUpdatePartidos() {
     const form = document.createElement('form');
     form.id = 'modal-form-update';
 
-    const idCandidatoInput = document.createElement('input');
-    idCandidatoInput.type = 'text';
-    idCandidatoInput.name = 'idCandidato';
-    idCandidatoInput.placeholder = 'ID Candidato';
-    idCandidatoInput.disabled = true; // Assuming ID should not be editable
-    let selectDni = null;
-    const dnisResponse = await getDnisCenso().then(data => {
-        selectDni = createSelectDnis(data, 'dni');
-        console.log(selectDni);
-    });
-    console.log(dnisResponse);
+    const idPartidoInput = document.createElement('input');
+    idPartidoInput.type = 'text';
+    idPartidoInput.name = 'idPartido';
+    idPartidoInput.placeholder = 'ID Partido';
+    idPartidoInput.disabled = true;
+    
+    
+    const inputIdElecciones = createInput('text', 'inputIdPartido', 'ID Partido');
+    inputIdElecciones.readOnly = true;
 
-    const idElecciones = await getIdElecciones();
-    const selectIdElecciones = createSelectIdElecciones(idElecciones, 'idElecciones');
+    const inputNombre = createInput('text', 'inputNombre', 'Nombre del partido');
+
+    const inputSiglas = createInput('text', 'inputSiglas', 'Siglas del partido');
 
     const localidades = await getLocalidades();
     const selectLocalidad = createSelectLocalidad(localidades, 'localidad');
@@ -211,21 +209,24 @@ async function createFormUpdatePartidos() {
     });
 
     const submitButton = createSubmitButton();
-    form.appendChild(idCandidatoInput);
-    form.appendChild(selectDni);
-    form.appendChild(selectLocalidad);
-    form.appendChild(selectIdElecciones);
-    form.appendChild(preferenciaSelect);
+    form.appendChild(inputIdElecciones);
+    form.appendChild(inputNombre);
+    form.appendChild(inputSiglas);
     form.appendChild(submitButton);
 
-    form.addEventListener('submit', (event) => {
-        event.preventDefault();
+    form.addEventListener('submit', async (event) => {
         const formData = new FormData(form);
-        const idCandidato = formData.get('idCandidato');
-        const dni = formData.get('select-opciones-dni');
-        const idEleccion = formData.get('select-opciones-idElecciones');
-        const localidad = formData.get('select-opciones-localidad');
-        const preferencia = formData.get('preferencia');
+        const idPartido = formData.get('inputIdPartido');
+        const nombre = formData.get('inputNombre');
+        const siglas = formData.get('inputSiglas');
+
+        const datos = {
+            idPartido: idPartido,
+            nombre: nombre,
+            siglas: siglas
+        };
+
+        await updatePartido(datos);
 
         
     });
@@ -236,7 +237,7 @@ async function createFormUpdatePartidos() {
 
 function createHeader() {
     const h1 = document.createElement('h1');
-    h1.textContent = `PANEL PARTIDOS`;
+    h1.textContent = 'PANEL PARTIDOS';
     return h1;
 }
 
@@ -328,7 +329,16 @@ async function createTableBody() {
         tr.appendChild(tdNombre);
         tr.appendChild(tdSiglas);
 
-        tr.addEventListener('click', () => {
+        tr.addEventListener('click', async () => {
+            const modalUpdate = document.getElementById('modalPadreUpdate');
+            modalUpdate.style.display = 'block';
+            const datosFila = {
+                idPartido: partido.idPartido,
+                nombre: partido.nombre,
+                siglas: partido.siglas,
+            };
+
+            await fillUpdateForm(datosFila);
 
         });
 
@@ -336,6 +346,17 @@ async function createTableBody() {
     });
 
     return tbody;
+}
+
+
+async function fillUpdateForm(datosFila){
+    const formUpdate = document.getElementById('modal-form-update');
+    console.log(datosFila);
+    formUpdate.querySelector('[name="inputIdPartido"]').value = datosFila.idPartido;
+
+    formUpdate.querySelector('[name="inputNombre"]').value = datosFila.nombre;
+
+    formUpdate.querySelector('[name="inputSiglas"]').value = datosFila.siglas;
 }
 
 async function createModalUpdate() {
@@ -349,9 +370,20 @@ async function createModalUpdate() {
     const form = await createFormUpdatePartidos();
     const closeButton = createCloseButton(modalPadre);
 
+    const deleteButton = createDeleteButton();
+    deleteButton.addEventListener('click', async () => {
+        const formData = new FormData(form);
+        const idPartido = formData.get('inputIdPartido');
+
+        await deletePartido(idPartido);
+        await generarContenidoEleccionPartidos();
+    });
+
     contenidoModal.appendChild(closeButton);
     contenidoModal.appendChild(form);
+    contenidoModal.appendChild(deleteButton);
     modalPadre.appendChild(contenidoModal);
+    
 
     return modalPadre;
 }

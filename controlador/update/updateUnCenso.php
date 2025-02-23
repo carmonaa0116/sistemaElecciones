@@ -1,6 +1,6 @@
 <?php
 
-require_once '../../bd\conectar.php';
+require_once '../../bd/conectar.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
 $conexion = $conn;

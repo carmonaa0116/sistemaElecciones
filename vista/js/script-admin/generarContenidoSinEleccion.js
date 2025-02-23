@@ -24,3 +24,21 @@ export function createCloseButton(modalPadre) {
     return closeButton;
 }
 
+
+export function createDeleteButton(modalPadre) {
+    const closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.textContent = 'ELIMINAR';
+    return closeButton;
+}
+
+export function createLabeledField(labelText, inputElement) {
+    const fieldWrapper = document.createElement('div');
+    const label = document.createElement('label');
+    label.textContent = labelText;
+    label.htmlFor = inputElement.name;
+    fieldWrapper.appendChild(label);
+    fieldWrapper.appendChild(inputElement);
+    return fieldWrapper;
+}
+

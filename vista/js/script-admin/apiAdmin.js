@@ -366,9 +366,37 @@ export async function getElecciones() {
     }
 }
 
+export async function updateEleccionFormUpdate(atributos) {
+    try {
+        const response = await fetch('../../../controlador/update/updateUnaEleccionFormUpdate.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                idEleccion: atributos.idEleccion,
+                tipo: atributos.tipo,
+                estado: atributos.estado,
+                fechaInicio: atributos.fechaInicio,
+                fechaFin: atributos.fechaFin
+            })
+        });
+        if (!response.ok) {
+            throw new Error('Ha habido un error en la conexión con updateUnaEleccionFormUpdate.php');
+        }
+        const data = await response.json();  // Lee la respuesta solo una vez
+        console.log('Respuesta de updateUnaEleccionFormUpdate: ');
+        console.log(data);
+        if (data.exito) return data.exito;
+        if (data.error) return data.error;
 
-export async function updateCandidatoFormUpdate(atributos) {    
-    console.error(atributos);
+    } catch (error) {
+        console.error('Error en updateCandidato: ', error);
+    }
+}
+
+
+export async function updateCandidatoFormUpdate(atributos) {
     try {
         const response = await fetch('../../../controlador/update/updateUnCandidatoFormUpdate.php', {
             method: 'POST',
@@ -394,5 +422,102 @@ export async function updateCandidatoFormUpdate(atributos) {
 
     } catch (error) {
         console.error('Error en updateCandidato: ', error);
+    }
+}
+
+export async function deleteCandidato(idCandidato) {
+    try {
+        const response = await fetch('../../../controlador/delete/deleteCandidato.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                idCandidato: idCandidato
+            })
+        });
+        if (!response.ok) {
+            throw new Error('Ha habido un error en la conexión con selectTodasEleccion.php');
+        }
+        const data = await response.json();  // Lee la respuesta solo una vez
+        console.log('Respuesta de getElecciones: ');
+        console.log(data);
+        if (data.exito) return data.exito;
+        if (data.error) return data.error;
+
+    } catch (error) {
+        console.error('Error en updateCandidato: ', error);
+    }
+}
+
+export async function updatePartido(datos) {
+    try {
+        const response = await fetch('../../../controlador/update/updateUnPartido.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(datos)
+        });
+        if (!response.ok) {
+            throw new Error('Ha habido un error en la conexión con selectTodasEleccion.php');
+        }
+        const data = await response.json();
+        console.log('RESPUESTA:');
+        console.log(data);
+        if (data.exito) return data.exito;
+        if (data.error) return data.error;
+    } catch (error) {
+
+    }
+}
+
+export async function deletePartido(idPartido) {
+    try {
+        const response = await fetch('../../../controlador/delete/deletePartidoId.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ idPartido: idPartido })
+        })
+
+        if (!response.ok) {
+            throw new Error('Ha habido un error en la conexión con selectTodasEleccion.php');
+        }
+        const data = await response.json();
+        console.log('RESPUESTA:');
+        console.log(data);
+        if (data.exito) return data.exito;
+        if (data.error) return data.error;
+    } catch (error) {
+
+    }
+}
+
+export async function actualizarEstadoEleccion(idEleccion, nuevoEstado){
+    console.log(idEleccion);
+    console.log(nuevoEstado);
+    try {
+        const response = await fetch('../../../controlador/update/updateEstadoEleccion.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                idEleccion: idEleccion,
+                estado: nuevoEstado
+            })
+        });
+        if (!response.ok) {
+            throw new Error('Ha habido un error en la conexión con selectTodasEleccion.php');
+        }
+        const data = await response.json();
+        console.log('RESPUESTA:');
+        console.log(data);
+        if (data.exito) return data.exito;
+        if (data.error) return data.error;
+    } catch (error) {
+
     }
 }

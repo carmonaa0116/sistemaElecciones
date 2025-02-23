@@ -1,12 +1,14 @@
 import { getDnisCenso, getElecciones, insertarEleccion, insertarPartido } from "./apiAdmin.js";
 import { getIdElecciones } from "./apiAdmin.js";
 import { getLocalidades } from "./apiAdmin.js";
-import { createSubmitButton } from "./generarContenidoSinEleccion.js";
+import { createInput, createSubmitButton } from "./generarContenidoSinEleccion.js";
 import { createCloseButton } from "./generarContenidoSinEleccion.js";
 import { getCandidatosNombre } from "./apiAdmin.js";
 import { insertarCandidato } from "./apiAdmin.js";
 import { getNombrePartidos } from "./apiAdmin.js";
 import { getPartidos } from "./apiAdmin.js";
+import { createLabeledField } from "./generarContenidoSinEleccion.js";
+import { updateEleccionFormUpdate } from "./apiAdmin.js";
 
 export async function generarContenidoEleccionElecciones() {
     const main = document.querySelector('main');
@@ -152,6 +154,8 @@ async function createFormInsertElecciones() {
 
     const selectTipo = createSelectTipos();
     selectTipo.required = true;
+    
+
     const inputFechaInicio = document.createElement('input');
     inputFechaInicio.type = 'date';
     inputFechaInicio.name = 'inputFechaInicio';
@@ -180,65 +184,76 @@ async function createFormInsertElecciones() {
 
 
         await insertarEleccion(tipo, estado, fechaInicio, fechaFin);
-        await generarContenidoEleccionPartidos();
+        await generarContenidoEleccionElecciones();
     });
 
     return form;
 }
+/*
+                idEleccion: eleccion.idEleccion,
+                tipo: eleccion.tipo,
+                estado: eleccion.estado,
+                idEleccion: eleccion.fechaInicio,
+                preferencia: eleccion.fechaFin
+*/
+async function fillUpdateForm(datosFila) {
+    const formUpdate = document.getElementById('modal-form-update');
+    formUpdate.querySelector('[name="idEleccion"]').value = datosFila.idEleccion;
+    formUpdate.querySelector('[name="select-opciones-tipos"]').value = datosFila.tipo;
+    console.log(formUpdate.querySelector('[name="select-opciones-tipos"]').value);
+    formUpdate.querySelector('[name="inputFechaInicio"]').value = datosFila.fechaInicio;
+    formUpdate.querySelector('[name="inputFechaFin"]').value = datosFila.fechaFin;
+}
+
 
 async function createFormUpdatePartidos() {
     const form = document.createElement('form');
     form.id = 'modal-form-update';
 
-    const idCandidatoInput = document.createElement('input');
-    idCandidatoInput.type = 'text';
-    idCandidatoInput.name = 'idCandidato';
-    idCandidatoInput.placeholder = 'ID Candidato';
-    idCandidatoInput.disabled = true; // Assuming ID should not be editable
-    let selectDni = null;
-    const dnisResponse = await getDnisCenso().then(data => {
-        selectDni = createSelectDnis(data, 'dni');
-        console.log(selectDni);
-    });
-    console.log(dnisResponse);
+    const inputIdEleccion = document.createElement('input');
+    inputIdEleccion.type = 'text';
+    inputIdEleccion.name = 'idEleccion';
+    inputIdEleccion.placeholder = 'ID Eleccion';
+    inputIdEleccion.readOnly = true;
 
-    const idElecciones = await getIdElecciones();
-    const selectIdElecciones = createSelectIdElecciones(idElecciones, 'idElecciones');
+    const selectTipo = createSelectTipos();
+    const inputFechaInicio = createInput('date', 'inputFechaInicio');
+    const inputFechaFin = createInput('date', 'inputFechaFin');
 
-    const localidades = await getLocalidades();
-    const selectLocalidad = createSelectLocalidad(localidades, 'localidad');
-
-    const preferenciaSelect = document.createElement('select');
-    preferenciaSelect.name = 'preferencia';
-    ['1', '2', '3'].forEach(value => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = value;
-        preferenciaSelect.appendChild(option);
-    });
+    form.appendChild(createLabeledField('ID Elecciones:', inputIdEleccion));
+    form.appendChild(createLabeledField('Tipo:', selectTipo));
+    form.appendChild(createLabeledField('Fecha Inicio:', inputFechaInicio));
+    form.appendChild(createLabeledField('Fecha Fin:', inputFechaFin));
 
     const submitButton = createSubmitButton();
-    form.appendChild(idCandidatoInput);
-    form.appendChild(selectDni);
-    form.appendChild(selectLocalidad);
-    form.appendChild(selectIdElecciones);
-    form.appendChild(preferenciaSelect);
     form.appendChild(submitButton);
 
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const formData = new FormData(form);
-        const idCandidato = formData.get('idCandidato');
-        const dni = formData.get('select-opciones-dni');
-        const idEleccion = formData.get('select-opciones-idElecciones');
-        const localidad = formData.get('select-opciones-localidad');
-        const preferencia = formData.get('preferencia');
+        const idEleccion = formData.get('idEleccion');
+        const tipo = formData.get('select-opciones-tipos');
+        const estado = formData.get('select-opciones-estado');
+        const fechaInicio = formData.get('inputFechaInicio');
+        const fechaFin = formData.get('inputFechaFin');
 
+        const atributos = {
+            idEleccion: idEleccion,
+            tipo: tipo,
+            estado: estado,
+            fechaInicio: fechaInicio,
+            fechaFin: fechaFin
+        };
 
+        console.log(atributos);
+
+        await updateEleccionFormUpdate(atributos);
+        await generarContenidoEleccionElecciones();
     });
 
     return form;
 }
+
 
 
 function createHeader() {
@@ -321,7 +336,6 @@ async function createTableBody() {
     console.log(eleccionesJSON);
 
     eleccionesJSON.forEach(eleccion => {
-        console.log(eleccion);
         const tr = document.createElement('tr');
 
         const tdIdEleccion = document.createElement('td');
@@ -345,8 +359,19 @@ async function createTableBody() {
         tr.appendChild(tdFechaInicio);
         tr.appendChild(tdFechaFin);
 
-        tr.addEventListener('click', () => {
-            
+        tr.addEventListener('click', async () => {
+            console.log('has hecho click en la fila');
+            const modalUpdate = document.getElementById('modalPadreUpdate');
+            modalUpdate.style.display = 'block';
+
+            const datosFila = {
+                idEleccion: eleccion.idEleccion,
+                tipo: eleccion.tipo.toUpperCase(),
+                fechaInicio: eleccion.fechaInicio,
+                fechaFin: eleccion.fechaFin
+            };
+            console.log(datosFila);
+            await fillUpdateForm(datosFila);
         });
 
         tbody.appendChild(tr);

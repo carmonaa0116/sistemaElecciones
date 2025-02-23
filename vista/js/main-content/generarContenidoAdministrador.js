@@ -8,7 +8,6 @@ export function generarContenidoAdministrador() {
     crearBotonGestionPartidos(main);
     crearBotonGestionElecciones(main);
     crearBotonGestionEscrutinio(main);
-    crearBotonFinalizarEleccion(main);
 }
 
 async function crearBotonGestionCandidatos(main) {
@@ -43,7 +42,7 @@ async function crearBotonGestionElecciones(main) {
 
 async function crearBotonGestionEscrutinio(main) {
     const button = document.createElement('button');
-    button.textContent = "GESTIÓN DE ESCRUTINIO";
+    button.textContent = "APERTURA O CIERRE DE ESCRUTINIO";
     button.addEventListener('click', async () => {
         await guardarCookieEleccion('eleccion', 'escrutinio');
         window.location.href = '../html/admin/gestionAdmin.html';
@@ -51,15 +50,6 @@ async function crearBotonGestionEscrutinio(main) {
     main.appendChild(button);
 }
 
-async function crearBotonFinalizarEleccion(main) {
-    const button = document.createElement('button');
-    button.textContent = "FINALIZAR ELECCIÓN";
-    button.addEventListener('click', async () => {
-        await guardarCookieEleccion('eleccion', 'finalizar');
-        window.location.href = '../html/admin/gestionAdmin.html';
-    });
-    main.appendChild(button);
-}
 
 async function guardarCookieEleccion(nombre, valor) {
     const datos = {

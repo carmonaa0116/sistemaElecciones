@@ -1,14 +1,5 @@
-import { getDnisCenso } from "./apiAdmin.js";
-import { getIdElecciones } from "./apiAdmin.js";
-import { getLocalidades } from "./apiAdmin.js";
-import { createSubmitButton } from "./generarContenidoSinEleccion.js";
-import { createCloseButton } from "./generarContenidoSinEleccion.js";
-import { getCandidatosNombre } from "./apiAdmin.js";
-import { insertarCandidato } from "./apiAdmin.js";
-import { getUnDniConIdCenso } from "./apiAdmin.js";
-import { getUnaLocalidadIdLocalidad } from "./apiAdmin.js";
-import { getUnaPreferenciaIdCandidato } from "./apiAdmin.js";
-import { updateCandidatoFormUpdate } from "./apiAdmin.js";
+import { getDnisCenso, getIdElecciones,getLocalidades, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato } from "./apiAdmin.js";
+import { createSubmitButton, createCloseButton, createDeleteButton, createLabeledField } from "./generarContenidoSinEleccion.js";
 
 export async function generarContenidoEleccionCandidatos() {
     const main = document.querySelector('main');
@@ -176,15 +167,7 @@ async function createFormInsertCandidatos() {
     return form;
 }
 
-function createLabeledField(labelText, inputElement) {
-    const fieldWrapper = document.createElement('div');
-    const label = document.createElement('label');
-    label.textContent = labelText;
-    label.htmlFor = inputElement.name;
-    fieldWrapper.appendChild(label);
-    fieldWrapper.appendChild(inputElement);
-    return fieldWrapper;
-}
+
 
 async function fillUpdateForm(datosFila) {
     const formUpdate = document.getElementById('modal-form-update');
@@ -197,7 +180,7 @@ async function fillUpdateForm(datosFila) {
 
     const selectLocalidad = formUpdate.querySelector('[name="select-opciones-localidad"]');
     const localidad = await getUnaLocalidadIdLocalidad(datosFila.idLocalidad);
-    selectLocalidad.value =localidad.nombre;
+    selectLocalidad.value = localidad.nombre;
 
     const selectEleccion = formUpdate.querySelector('[name="select-opciones-idElecciones"]');
     selectEleccion.value = datosFila.idEleccion;
@@ -399,8 +382,18 @@ async function createModalUpdate() {
     const form = await createFormUpdateCandidatos();
     const closeButton = createCloseButton(modalPadre);
 
+    const deleteButton = createDeleteButton(modalPadre);
+
+    deleteButton.addEventListener('click', async () => {
+        const formData = new FormData(form);
+        const idCandidato = formData.get('idCandidato');
+
+        await deleteCandidato(idCandidato);
+    });
+
     contenidoModal.appendChild(closeButton);
     contenidoModal.appendChild(form);
+    contenidoModal.appendChild(deleteButton)
     modalPadre.appendChild(contenidoModal);
 
     return modalPadre;
