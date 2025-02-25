@@ -57,7 +57,7 @@ function generarFormularioLogin() {
     const mensajeRegistrado = document.createElement('p');
     mensajeRegistrado.textContent = "¿No te has registrado? Haz clic aquí:";
     const enlaceLogin = document.createElement('a');
-    enlaceLogin.href = "./register.html";
+    enlaceLogin.href = "./vista/html/register.html";
     enlaceLogin.textContent = "Registrarse";
     divContenedorFormulario.appendChild(form);
 
@@ -92,7 +92,7 @@ function generarFormularioLogin() {
             body: JSON.stringify(datos)
         };
 
-        fetch('../../controlador/auth/login.php', fetchOptions)
+        fetch('controlador/auth/login.php', fetchOptions)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
@@ -103,7 +103,7 @@ function generarFormularioLogin() {
                     if (data.exito) {
                         console.log(data.exito);
                         mensajeError.textContent = '';
-                        window.location.href = "../html/main.php";
+                        window.location.href = "./vista/html/main.php";
                     }
                     if (data.error) {
                         console.log(data.error);

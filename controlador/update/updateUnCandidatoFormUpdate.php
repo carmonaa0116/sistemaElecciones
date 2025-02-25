@@ -5,22 +5,45 @@ require_once '../../bd/conectar.php';
 $data = json_decode(file_get_contents('php://input'), true);
 $conexion = $conn;
 
-if (isset($data['idCandidato']) && isset($data['dni']) && isset($data['localidad']) && isset($data['eleccion']) && isset($data['preferencia'])) {
+if (isset($data['idCandidato'], $data['dni'], $data['localidad'], $data['eleccion'], $data['preferencia'], $data['idPartido'])) {
     $idCandidato = $data['idCandidato'];
     $dni = $data['dni'];
     $localidad = $data['localidad'];
-    $eleccion = $data['eleccion'];
+    $idEleccion = $data['eleccion'];
     $preferencia = $data['preferencia'];
+    $nombrePartido = $data['idPartido']; // Es un nombre, no un ID
 
-    // Actualizar la tabla candidato
-    $sqlCandidato = "UPDATE candidato SET idCenso = (SELECT idCenso FROM censo WHERE dni = ? LIMIT 1), idLocalidad = (SELECT idLocalidad FROM localidad WHERE nombre = ? LIMIT 1), idEleccion = ?, preferencia = ? WHERE idCandidato = ?";
+    // Obtener ID del censo a partir del DNI
+    $idCenso = getIdCenso($dni, $conexion);
+    if ($idCenso === null) {
+        echo json_encode(['error' => 'DNI no encontrado en el censo']);
+        exit;
+    }
+
+    // Obtener ID de la localidad a partir del nombre
+    $idLocalidad = getIdLocalidad($localidad, $conexion);
+    if ($idLocalidad === null) {
+        echo json_encode(['error' => 'Localidad no encontrada']);
+        exit;
+    }
+
+    // Obtener ID del partido a partir del nombre
+    $idPartido = getIdPartido($nombrePartido, $conexion);
+    if ($idPartido === null) {
+        echo json_encode(['error' => 'Partido no encontrado']);
+        exit;
+    }
+
+    // Actualizar datos del candidato
+    $sqlCandidato = "UPDATE candidato SET idCenso = ?, idLocalidad = ?, idEleccion = ?, preferencia = ?, idPartido = ? WHERE idCandidato = ?";
     $stmtCandidato = $conexion->prepare($sqlCandidato);
 
     if (!$stmtCandidato) {
-        die(json_encode(['error' => 'Error en la preparación de la consulta de candidato']));
+        echo json_encode(['error' => 'Error en la preparación de la consulta de candidato']);
+        exit;
     }
 
-    $stmtCandidato->bind_param('issss', $dni, $localidad, $eleccion, $preferencia, $idCandidato);
+    $stmtCandidato->bind_param('iiiiii', $idCenso, $idLocalidad, $idEleccion, $preferencia, $idPartido, $idCandidato);
 
     if ($stmtCandidato->execute()) {
         if ($stmtCandidato->affected_rows > 0) {
@@ -35,4 +58,66 @@ if (isset($data['idCandidato']) && isset($data['dni']) && isset($data['localidad
     $stmtCandidato->close();
 } else {
     echo json_encode(['error' => 'Hay datos de entrada incompletos']);
+    exit;
+}
+
+// Obtener ID del censo por DNI
+function getIdCenso($dni, $conexion) {
+    $sql = "SELECT idCenso FROM censo WHERE dni = ? LIMIT 1";
+    $stmt = $conexion->prepare($sql);
+
+    if (!$stmt) {
+        echo json_encode(['error' => 'Error en la preparación de la consulta de censo']);
+        exit;
+    }
+
+    $stmt->bind_param('s', $dni);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        return $row['idCenso'];
+    } else {
+        return null;
+    }
+}
+
+// Obtener ID de la localidad por nombre
+function getIdLocalidad($localidad, $conexion) {
+    $sql = "SELECT idLocalidad FROM localidad WHERE nombre = ?";
+    $stmt = $conexion->prepare($sql);
+
+    if (!$stmt) {
+        return null;
+    }
+
+    $stmt->bind_param('s', $localidad);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        return $row['idLocalidad'];
+    } else {
+        return null;
+    }
+}
+
+// Obtener ID del partido por nombre
+function getIdPartido($nombrePartido, $conexion) {
+    $sql = "SELECT idPartido FROM partido WHERE nombre = ?";
+    $stmt = $conexion->prepare($sql);
+
+    if (!$stmt) {
+        return null;
+    }
+
+    $stmt->bind_param('s', $nombrePartido);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+        return $row['idPartido'];
+    } else {
+        return null;
+    }
 }

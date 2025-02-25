@@ -24,9 +24,6 @@ export async function generarContenidoPorEleccion(eleccion) {
         case 'escrutinio':
             await generarContenidoACescrutinio();
             break;
-        case 'finalizar':
-            await generateMainContent(eleccion);
-            break;
         default:
             console.log('Error');
             break;

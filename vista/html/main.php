@@ -9,13 +9,8 @@
 </head>
 
 <body>
-    <header class="logoCivio">
-        <a href="#">
-            <img src="../../img/logoCivio.png" alt="">
-        </a>
-    </header>
     <main>
-
+       
     </main>
     <footer></footer>
 </body>

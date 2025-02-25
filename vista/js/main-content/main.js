@@ -20,6 +20,9 @@ async function mostrarContenido() {
                 case 'Votante':
                     generarContenidoVotante();
                     break;
+                case 'votante':
+                    generarContenidoVotante();
+                    break;
                 case 'Administrador':
                     generarContenidoAdministrador();
                     break;

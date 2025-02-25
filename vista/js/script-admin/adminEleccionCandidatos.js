@@ -1,6 +1,6 @@
-import { getDnisCenso, getIdElecciones,getLocalidades, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato } from "./apiAdmin.js";
+import { getDnisCenso, getIdElecciones, getLocalidades, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato, getNombrePartidoConId } from "./apiAdmin.js";
 import { createSubmitButton, createCloseButton, createDeleteButton, createLabeledField } from "./generarContenidoSinEleccion.js";
-
+import { getPartidos } from "./apiAdmin.js";
 export async function generarContenidoEleccionCandidatos() {
     const main = document.querySelector('main');
     main.innerHTML = '';
@@ -58,7 +58,6 @@ function createSelectDnis(jsonDni, nombreSelect) {
         option.textContent = jsonDni[i].dni;
         select.appendChild(option);
     }
-    console.log(select);
     return select;
 }
 
@@ -66,7 +65,6 @@ function createSelectIdElecciones(jsonElecciones, nombreSelect) {
     const select = document.createElement('select');
     select.name = `select-opciones-${nombreSelect}`;
 
-    // Opción por defecto
     const defaultOption = document.createElement('option');
     defaultOption.value = "";
     defaultOption.textContent = `Selecciona ${nombreSelect}`;
@@ -87,19 +85,10 @@ function createSelectIdElecciones(jsonElecciones, nombreSelect) {
 function createSelectLocalidad(localidades, nombreSelect) {
     const select = document.createElement('select');
     select.name = `select-opciones-${nombreSelect}`;
-
-    // Opción por defecto
-    const defaultOption = document.createElement('option');
-    defaultOption.value = "";
-    defaultOption.textContent = `Selecciona ${nombreSelect}`;
-    defaultOption.selected = true;
-    defaultOption.disabled = true;
-    select.appendChild(defaultOption);
-
-    localidades.forEach(localidad => {
+    localidades.localidades.forEach(localidad => {
         const option = document.createElement('option');
-        option.value = localidad;
-        option.textContent = localidad;
+        option.value = localidad.nombre;
+        option.textContent = localidad.nombre;
         select.appendChild(option);
     });
 
@@ -143,24 +132,32 @@ async function createFormInsertCandidatos() {
     const localidades = await getLocalidades();
     const selectLocalidad = createSelectLocalidad(localidades, 'localidad');
     const selectEleccion = createSelectPreferencia();
+    const partidos = await getPartidos();
+    const selectPartidos = await createSelectPartidos(partidos);
 
     form.appendChild(createLabeledField('DNI:', selectDni));
     form.appendChild(createLabeledField('Localidad:', selectLocalidad));
     form.appendChild(createLabeledField('ID Elección:', selectIdElecciones));
     form.appendChild(createLabeledField('Preferencia:', selectEleccion));
+    form.appendChild(createLabeledField('Partido', selectPartidos));
 
     const submitButtonCandidatos = createSubmitButton();
     form.appendChild(submitButtonCandidatos);
 
     form.addEventListener('submit', async (event) => {
-        event.preventDefault();
         const formData = new FormData(form);
         const dni = formData.get('select-opciones-dni');
         const idEleccion = formData.get('select-opciones-idElecciones');
-        const localidad = formData.get('select-opciones-localidad');
+        const idLocalidad = formData.get('select-opciones-localidad');
         const preferencia = formData.get('select-opciones-preferencia');
+        const partido = formData.get('select-opciones-partidos');
+        console.log(dni);
+        console.log(idEleccion);
+        console.log(idLocalidad);
+        console.log(preferencia);
 
-        await insertarCandidato(dni, localidad, idEleccion, preferencia);
+
+        await insertarCandidato(dni, idLocalidad, idEleccion, preferencia, partido);
         await generarContenidoEleccionCandidatos();
     });
 
@@ -169,27 +166,6 @@ async function createFormInsertCandidatos() {
 
 
 
-async function fillUpdateForm(datosFila) {
-    const formUpdate = document.getElementById('modal-form-update');
-    console.log(datosFila);
-    formUpdate.querySelector('[name="idCandidato"]').value = datosFila.idCandidato;
-
-    const selectDni = formUpdate.querySelector('[name="select-opciones-dni"]');
-    const dni = await getUnDniConIdCenso(datosFila.idCenso);
-    selectDni.value = dni.dni;
-
-    const selectLocalidad = formUpdate.querySelector('[name="select-opciones-localidad"]');
-    const localidad = await getUnaLocalidadIdLocalidad(datosFila.idLocalidad);
-    selectLocalidad.value = localidad.nombre;
-
-    const selectEleccion = formUpdate.querySelector('[name="select-opciones-idElecciones"]');
-    selectEleccion.value = datosFila.idEleccion;
-
-    const selectPreferencia = formUpdate.querySelector('[name="select-opciones-preferencia"]');
-    const preferencia = await getUnaPreferenciaIdCandidato(datosFila.idCandidato);
-    console.log(preferencia);
-    selectPreferencia.value = preferencia.preferencia;
-}
 
 async function createFormUpdateCandidatos() {
     const form = document.createElement('form');
@@ -203,19 +179,20 @@ async function createFormUpdateCandidatos() {
 
     let dnisResponse = await getDnisCenso();
     dnisResponse = dnisResponse.value;
-    console.log(dnisResponse);
     const selectDni = createSelectDnis(dnisResponse, 'dni');
     const idElecciones = await getIdElecciones();
     const selectIdElecciones = createSelectIdElecciones(idElecciones, 'idElecciones');
     const localidades = await getLocalidades();
     const selectLocalidad = createSelectLocalidad(localidades, 'localidad');
     const preferenciaSelect = createSelectPreferencia();
-
+    const partidos = await getPartidos();
+    const selectPartidos = await createSelectPartidos(partidos);
     form.appendChild(createLabeledField('ID Candidato:', idCandidatoInput));
     form.appendChild(createLabeledField('DNI:', selectDni));
     form.appendChild(createLabeledField('Localidad:', selectLocalidad));
     form.appendChild(createLabeledField('ID Elección:', selectIdElecciones));
     form.appendChild(createLabeledField('Preferencia:', preferenciaSelect));
+    form.appendChild(createLabeledField('Partido', selectPartidos))
 
     const submitButton = createSubmitButton();
     form.appendChild(submitButton);
@@ -228,7 +205,7 @@ async function createFormUpdateCandidatos() {
         const localidad = formData.get('select-opciones-localidad');
         const eleccion = formData.get('select-opciones-idElecciones');
         const preferencia = formData.get('select-opciones-preferencia');
-
+        const idPartido = formData.get('select-opciones-partidos')
         console.log(idCandidato);
 
         const atributos = {
@@ -236,8 +213,11 @@ async function createFormUpdateCandidatos() {
             dni: dni,
             localidad: localidad,
             eleccion: eleccion,
-            preferencia: preferencia
+            preferencia: preferencia,
+            idPartido: idPartido
         };
+
+        console.log(atributos);
 
         await updateCandidatoFormUpdate(atributos);
         await generarContenidoEleccionCandidatos();
@@ -312,7 +292,7 @@ function createTableHeader() {
     thead.id = 'theadCandidatos';
     const tr = document.createElement('tr');
 
-    ['idCandidato', 'idCenso', 'idLocalidad', 'idEleccion', 'preferencia'].forEach(text => {
+    ['idCandidato', 'idCenso', 'idLocalidad', 'idEleccion', 'preferencia', 'partido'].forEach(text => {
         const th = document.createElement('th');
         th.textContent = text;
         tr.appendChild(th);
@@ -326,7 +306,8 @@ function createTableHeader() {
 async function createTableBody() {
     const tbody = document.createElement('tbody');
     const candidatos = await getCandidatosNombre();
-    candidatos.forEach(candidato => {
+
+    for (const candidato of candidatos) {
         const tr = document.createElement('tr');
 
         const tdIdCandidato = document.createElement('td');
@@ -344,31 +325,62 @@ async function createTableBody() {
         const tdPreferencia = document.createElement('td');
         tdPreferencia.textContent = candidato.preferencia;
 
+        const partido = await getNombrePartidoConId(candidato.idPartido);
+
+        const tdPartido = document.createElement('td');
+        tdPartido.textContent = partido.nombre; // Corrección aquí
         tr.appendChild(tdIdCandidato);
         tr.appendChild(tdIdCenso);
         tr.appendChild(tdIdLocalidad);
         tr.appendChild(tdIdEleccion);
         tr.appendChild(tdPreferencia);
+        tr.appendChild(tdPartido);
 
         tr.addEventListener('click', async () => {
             const modalUpdate = document.getElementById('modalPadreUpdate');
             modalUpdate.style.display = 'block';
-            const datosFila = {
+            const datos = {
                 idCandidato: candidato.idCandidato,
                 idCenso: candidato.idCenso,
                 idLocalidad: candidato.idLocalidad,
                 idEleccion: candidato.idEleccion,
-                preferencia: candidato.preferencia
+                preferencia: candidato.preferencia,
+                idPartido: candidato.idPartido
             };
 
-            await fillUpdateForm(datosFila);
-
+            await fillUpdateForm(datos);
         });
 
         tbody.appendChild(tr);
-    });
+    }
 
     return tbody;
+}
+
+async function fillUpdateForm(datos) {
+    const formUpdate = document.getElementById('modal-form-update');
+    formUpdate.querySelector('[name="idCandidato"]').value = datos.idCandidato;
+
+    const selectDni = formUpdate.querySelector('[name="select-opciones-dni"]');
+    const dni = await getUnDniConIdCenso(datos.idCenso);
+    selectDni.value = dni.dni;
+
+    const selectLocalidad = formUpdate.querySelector('[name="select-opciones-localidad"]');
+    const nombreLocalidad = await getUnaLocalidadIdLocalidad(datos.idLocalidad);
+
+    selectLocalidad.value = nombreLocalidad.nombre;
+
+    const selectEleccion = formUpdate.querySelector('[name="select-opciones-idElecciones"]');
+    selectEleccion.value = datos.idEleccion;
+
+    const selectPreferencia = formUpdate.querySelector('[name="select-opciones-preferencia"]');
+    const preferencia = await getUnaPreferenciaIdCandidato(datos.idCandidato);
+    selectPreferencia.value = preferencia.preferencia;
+
+    const selectPartido = formUpdate.querySelector('[name="select-opciones-partidos"]');
+    const nombrePartido = await getNombrePartidoConId(datos.idPartido);
+    console.log(nombrePartido);
+    selectPartido.value = nombrePartido.nombre;
 }
 
 async function createModalUpdate() {
@@ -397,4 +409,16 @@ async function createModalUpdate() {
     modalPadre.appendChild(contenidoModal);
 
     return modalPadre;
+}
+
+async function createSelectPartidos(partidos) {
+    const select = document.createElement('select');
+    select.name = 'select-opciones-partidos';
+    partidos.forEach(partido => {
+        const option = document.createElement('option');
+        option.value = partido.nombre;
+        option.textContent = partido.nombre;
+        select.appendChild(option);
+    });
+    return select;
 }

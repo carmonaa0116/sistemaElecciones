@@ -1,40 +1,55 @@
 <?php
 require_once '../../bd/conectar.php';
 header('Content-Type: application/json');
+
 $data = json_decode(file_get_contents('php://input'), true);
 $conexion = $conn;
 
-if (isset($data['dni']) && isset($data['localidad']) && isset($data['idEleccion']) && isset($data['preferencia'])) {
+if (isset($data['dni'], $data['idLocalidad'], $data['idEleccion'], $data['preferencia'], $data['partido'])) {
     $dni = $data['dni'];
-    $idLocalidad = sacarIdLocalidad($data['localidad'], $conexion);
+    $idLocalidad = $data['idLocalidad'];
+    $idElecciones = $data['idEleccion'];
+    $preferencia = $data['preferencia'];
+    $partido = $data['partido'];
 
-    // Verificar si idLocalidad es null
+    // Verificar si la localidad es válida
     if ($idLocalidad === null) {
         echo json_encode(['error' => 'La localidad no existe']);
         exit;
     }
 
-    $idElecciones = $data['idEleccion'];
-    $preferencia = $data['preferencia'];
-
+    // Verificar si el DNI existe en el censo
     if (!comprobarIdCenso($dni, $conexion)) {
-        echo json_encode(['error' => 'El dni no está en la base de datos']);
+        echo json_encode(['error' => 'El DNI no está en la base de datos']);
         exit;
     }
 
-    $idCenso = obtenerIdCenso($dni, $conexion); // Obtener el idCenso
-
+    // Obtener el ID del censo
+    $idCenso = obtenerIdCenso($dni, $conexion);
     if ($idCenso === null) {
         echo json_encode(['error' => 'No se pudo obtener el idCenso']);
         exit;
     }
 
-    // Insertar los datos en la base de datos
-    $sql = "INSERT INTO candidato (idCenso, idLocalidad, idEleccion, preferencia) VALUES (?, ?, ?, ?)";
+    // Verificar si el candidato ya existe
+    if (candidatoExiste($idCenso, $conexion)) {
+        echo json_encode(['error' => 'Este candidato ya está registrado']);
+        exit;
+    }
+
+    // Obtener el ID del partido
+    $idPartido = obtenerIdPartido($partido, $conexion);
+    if ($idPartido === null) {
+        echo json_encode(['error' => 'El partido no existe']);
+        exit;
+    }
+
+    // Insertar el candidato
+    $sql = "INSERT INTO candidato (idCenso, idLocalidad, idEleccion, preferencia, idPartido) VALUES (?, ?, ?, ?, ?)";
     $stmt = $conexion->prepare($sql);
 
     if ($stmt) {
-        $stmt->bind_param("iiis", $idCenso, $idLocalidad, $idElecciones, $preferencia);
+        $stmt->bind_param("iiiii", $idCenso, $idLocalidad, $idElecciones, $preferencia, $idPartido);
         $stmt->execute();
 
         if ($stmt->affected_rows > 0) {
@@ -55,63 +70,62 @@ if (isset($data['dni']) && isset($data['localidad']) && isset($data['idEleccion'
     exit;
 }
 
-function sacarIdLocalidad($localidad, $conexion)
-{
-    $sql = "SELECT idLocalidad FROM localidad WHERE nombre = ?";
+// Verificar si el candidato ya existe en la base de datos
+function candidatoExiste($idCenso, $conexion) {
+    $sql = "SELECT 1 FROM candidato WHERE idCenso = ? LIMIT 1";
     $stmt = $conexion->prepare($sql);
-
-    if (!$stmt) {
-        die(json_encode(['error' => 'Error en la preparación de la consulta: ' . $conexion->error]));
-    }
-
-    $stmt->bind_param('s', $localidad);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($row = $result->fetch_assoc()) {
-        return $row['idLocalidad'];
-    } else {
-        return null;
-    }
-}
-
-function comprobarIdCenso($dni, $conexion)
-{
-    $sql = "SELECT idCenso FROM censo WHERE dni = ?";
-    $stmt = $conexion->prepare($sql);
-
     if ($stmt) {
-        $stmt->bind_param("s", $dni);  // Cambiado a "s" para que acepte una cadena
+        $stmt->bind_param("i", $idCenso);
         $stmt->execute();
         $stmt->store_result();
-
-        // Si hay al menos una fila, el idCenso existe
-        if ($stmt->num_rows > 0) {
-            $stmt->close();
-            return true;
-        } else {
-            $stmt->close();
-            return false;
-        }
-    } else {
-        return false; // Error al preparar la consulta
+        $existe = $stmt->num_rows > 0;
+        $stmt->close();
+        return $existe;
     }
+    return false;
 }
 
-function obtenerIdCenso($dni, $conexion)
-{
-    $sql = "SELECT idCenso FROM censo WHERE dni = ?";
+// Verificar si el DNI existe en el censo
+function comprobarIdCenso($dni, $conexion) {
+    $sql = "SELECT 1 FROM censo WHERE dni = ? LIMIT 1";
     $stmt = $conexion->prepare($sql);
-    $idCenso = null;
     if ($stmt) {
-        $stmt->bind_param("s", $dni);  // Cambiado a "s" para que acepte una cadena
+        $stmt->bind_param("i", $dni);
+        $stmt->execute();
+        $stmt->store_result();
+        $existe = $stmt->num_rows > 0;
+        $stmt->close();
+        return $existe;
+    }
+    return false;
+}
+
+// Obtener el ID del censo a partir del DNI
+function obtenerIdCenso($dni, $conexion) {
+    $sql = "SELECT idCenso FROM censo WHERE dni = ? LIMIT 1";
+    $stmt = $conexion->prepare($sql);
+    if ($stmt) {
+        $stmt->bind_param("i", $dni);
         $stmt->execute();
         $stmt->bind_result($idCenso);
         $stmt->fetch();
         $stmt->close();
-
         return $idCenso;
-    } else {
-        return null;  // Si no se puede obtener el idCenso
     }
+    return null;
+}
+
+// Obtener el ID del partido a partir del nombre
+function obtenerIdPartido($partido, $conexion) {
+    $sql = "SELECT idPartido FROM partido WHERE nombre = ? LIMIT 1";
+    $stmt = $conexion->prepare($sql);
+    if ($stmt) {
+        $stmt->bind_param("s", $partido);
+        $stmt->execute();
+        $stmt->bind_result($idPartido);
+        $stmt->fetch();
+        $stmt->close();
+        return $idPartido;
+    }
+    return null;
 }

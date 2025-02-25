@@ -106,8 +106,8 @@ function createSelectLocalidad(localidades, nombreSelect) {
     defaultOption.selected = true;
     defaultOption.disabled = true;
     select.appendChild(defaultOption);
-
-    localidades.forEach(localidad => {
+    console.log(localidades.localidades);
+    localidades.localidades.forEach(localidad => {
         const option = document.createElement('option');
         option.value = localidad;
         option.textContent = localidad;
@@ -117,35 +117,10 @@ function createSelectLocalidad(localidades, nombreSelect) {
     return select;
 }
 
-function createSelectPreferencia() {
-
-    const select = document.createElement('select');
-    select.name = 'select-opciones-preferencia';
-
-    const optionNull = document.createElement('option');
-    optionNull.name = null;
-    optionNull.textContent = 'Selecciona la preferencia';
-
-    select.appendChild(optionNull);
-
-    const preferencias = ["1", "2", "3"];
-
-    preferencias.forEach(preferencia => {
-        const option = document.createElement('option');
-        option.id = `preferencia-${preferencia}`;
-        option.name = `preferencia-${preferencia}`;
-        option.textContent = 'preferencia';
-        select.appendChild(option);
-    });
-
-    return select;
-    
-
-}
-
 async function createFormInsertPartido() {
     const form = document.createElement('form');
     form.id = 'modal-form-insert';
+    form.enctype = 'multipart/form-data';
 
     const inputNombrePartido = document.createElement('input');
     inputNombrePartido.name = 'input-nombre-partido';
@@ -159,24 +134,29 @@ async function createFormInsertPartido() {
     inputSiglasPartido.required = true;
     inputSiglasPartido.placeholder = 'Inserta las siglas del partido';
 
-    const submitButtonCandidatos = createSubmitButton();
+    // Campo para la imagen
+    const inputImagenPartido = document.createElement('input');
+    inputImagenPartido.name = 'input-imagen-partido';
+    inputImagenPartido.type = 'file';
+    inputImagenPartido.accept = 'image/*'; // Acepta solo imágenes
+
+    const submitButton = createSubmitButton();
 
     form.appendChild(inputNombrePartido);
     form.appendChild(inputSiglasPartido);
-    form.appendChild(submitButtonCandidatos);
+    form.appendChild(inputImagenPartido);
+    form.appendChild(submitButton);
 
     form.addEventListener('submit', async (event) => {
-        event.preventDefault();
         const formData = new FormData(form);
-        const nombrePartido = formData.get('input-nombre-partido');
-        const siglasPartido = formData.get('input-siglas-partido');
-
-        await insertarPartido(nombrePartido, siglasPartido);
+        console.log(formData.getAll);
+        await insertarPartido(formData);
         await generarContenidoEleccionPartidos();
     });
 
     return form;
 }
+
 
 async function createFormUpdatePartidos() {
     const form = document.createElement('form');
@@ -196,9 +176,8 @@ async function createFormUpdatePartidos() {
 
     const inputSiglas = createInput('text', 'inputSiglas', 'Siglas del partido');
 
-    const localidades = await getLocalidades();
-    const selectLocalidad = createSelectLocalidad(localidades, 'localidad');
-
+    const inputImagen = createInput('file', 'inputImagen', 'Imagen del partido')
+        
     const preferenciaSelect = document.createElement('select');
     preferenciaSelect.name = 'preferencia';
     ['1', '2', '3'].forEach(value => {
@@ -212,24 +191,22 @@ async function createFormUpdatePartidos() {
     form.appendChild(inputIdElecciones);
     form.appendChild(inputNombre);
     form.appendChild(inputSiglas);
+    form.appendChild(inputImagen);
     form.appendChild(submitButton);
 
     form.addEventListener('submit', async (event) => {
-        const formData = new FormData(form);
-        const idPartido = formData.get('inputIdPartido');
-        const nombre = formData.get('inputNombre');
-        const siglas = formData.get('inputSiglas');
-
-        const datos = {
-            idPartido: idPartido,
-            nombre: nombre,
-            siglas: siglas
-        };
-
-        await updatePartido(datos);
-
+        event.preventDefault();
         
+        const formData = new FormData(form); // Enviar como FormData
+        formData.append('idPartido', document.querySelector('[name="inputIdPartido"]').value);
+        formData.append('nombre', document.querySelector('[name="inputNombre"]').value);
+        formData.append('siglas', document.querySelector('[name="inputSiglas"]').value);
+        formData.append('imagen', document.querySelector('[name="inputImagen"]').files[0]); // Archivo de imagen
+        
+        await updatePartido(formData);
+        await generarContenidoEleccionPartidos()
     });
+    
 
     return form;
 }
@@ -297,7 +274,7 @@ function createTableHeader() {
     thead.id = 'theadCandidatos';
     const tr = document.createElement('tr');
 
-    ['idPartido', 'nombre', 'siglas'].forEach(text => {
+    ['idPartido', 'nombre', 'siglas', 'imagen'].forEach(text => {
         const th = document.createElement('th');
         th.textContent = text;
         tr.appendChild(th);
@@ -313,6 +290,7 @@ async function createTableBody() {
     const tbody = document.createElement('tbody');
     const partidos = await getPartidos();
     console.log(partidos);
+    
     partidos.forEach(partido => {
         const tr = document.createElement('tr');
 
@@ -325,9 +303,20 @@ async function createTableBody() {
         const tdSiglas = document.createElement('td');
         tdSiglas.textContent = partido.siglas;
 
+        // Crear celda para la imagen
+        const tdImagen = document.createElement('td');
+        const img = document.createElement('img');
+        img.src = partido.imagen ? partido.imagen : '../../img/no-image.png'; 
+        img.alt = partido.nombre;
+        img.style.width = '4vw'; // Ajustar el tamaño si es necesario
+        img.style.height = 'auto';
+        img.style.borderRadius = '5px';
+        tdImagen.appendChild(img);
+
         tr.appendChild(tdIdPartido);
         tr.appendChild(tdNombre);
         tr.appendChild(tdSiglas);
+        tr.appendChild(tdImagen);
 
         tr.addEventListener('click', async () => {
             const modalUpdate = document.getElementById('modalPadreUpdate');
@@ -336,6 +325,7 @@ async function createTableBody() {
                 idPartido: partido.idPartido,
                 nombre: partido.nombre,
                 siglas: partido.siglas,
+                imagen: partido.imagen
             };
 
             await fillUpdateForm(datosFila);
@@ -347,6 +337,7 @@ async function createTableBody() {
 
     return tbody;
 }
+
 
 
 async function fillUpdateForm(datosFila){

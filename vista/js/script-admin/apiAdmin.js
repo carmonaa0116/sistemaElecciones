@@ -40,7 +40,6 @@ export async function getDnisCenso() {
 export async function getUnDniConIdCenso(idCenso) {
     try {
         const idCensoFinal = idCenso;
-        console.log(idCensoFinal);
         const response = await fetch('../../../controlador/select/selectUnDniConIdCenso.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -65,7 +64,7 @@ export async function getUnDniConIdCenso(idCenso) {
 export async function getUnaLocalidadIdLocalidad(idLocalidad) {
     try {
         const idLocalidadFinal = idLocalidad;
-        console.log(idLocalidadFinal);
+
         const response = await fetch('../../../controlador/select/selectUnaLocalidadConIdLocalidad.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -78,6 +77,7 @@ export async function getUnaLocalidadIdLocalidad(idLocalidad) {
             throw new Error('Network response was not ok');
         }
         const data = await response.json();
+        console.log(data);
         if (data.error) console.error(data.error);
         return data;
 
@@ -90,7 +90,7 @@ export async function getUnaLocalidadIdLocalidad(idLocalidad) {
 export async function getUnaPreferenciaIdCandidato(idCandidato) {
     try {
         const idCandidatoFinal = idCandidato;
-        console.log(idCandidatoFinal);
+
         const response = await fetch('../../../controlador/select/selectUnaPreferenciaIdCandidato.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -122,14 +122,7 @@ export async function getLocalidades() {
         if (!response.ok) throw new Error('Error en la petición');
 
         const data = await response.json();
-
-        if (data.localidades && Array.isArray(data.localidades)) {
-            const localidades = data.localidades.map(localidad => localidad.nombre); // Extraemos solo los nombres
-            return localidades;
-        } else {
-            console.error('La estructura de datos no contiene un array de localidades');
-            return []; // Devolvemos un array vacío si no encontramos el campo esperado
-        }
+        return await data;
 
     } catch (error) {
         console.error('Error en getLocalidades:', error);
@@ -218,7 +211,7 @@ export async function insertarEleccion(tipo, estado, fechaInicio, fechaFin) {
 }
 
 
-export async function insertarCandidato(dni, localidad, idEleccion, preferencia) {
+export async function insertarCandidato(dni, idLocalidad, idEleccion, preferencia, partido) {
     try {
         const response = await fetch('../../../controlador/insert/insertarAcandidatos.php', {
             method: 'POST',
@@ -227,9 +220,10 @@ export async function insertarCandidato(dni, localidad, idEleccion, preferencia)
             },
             body: JSON.stringify({
                 dni: dni,
-                localidad: localidad,
+                idLocalidad: idLocalidad,
                 idEleccion: idEleccion,
-                preferencia: preferencia
+                preferencia: preferencia,
+                partido: partido
             })
         });
 
@@ -248,24 +242,18 @@ export async function insertarCandidato(dni, localidad, idEleccion, preferencia)
     }
 }
 
-export async function insertarPartido(nombrePartido, siglasPartido) {
+export async function insertarPartido(formData) {
     try {
         const response = await fetch('../../../controlador/insert/insertarApartidos.php', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                nombrePartido: nombrePartido,
-                siglasPartido: siglasPartido
-            })
+            body: formData // `FormData` incluye la imagen y los textos
         });
 
         if (!response.ok) {
             throw new Error('La respuesta no fue correcta');
         }
         const data = await response.json();
-        if (data.exito) console.log(data.exito);
+        if (data.exito) alert(data.exito);
         if (data.error) {
             console.log(data.error);
             return null;
@@ -275,6 +263,7 @@ export async function insertarPartido(nombrePartido, siglasPartido) {
         throw error;
     }
 }
+
 
 export async function getPreferenciasDisponibles(idLocalidad) {
 
@@ -334,6 +323,23 @@ export async function getPartidos() {
         return await response.json();
     } catch (error) {
         console.error('Error en getCandidatosNombre:', error);
+        return [];
+    }
+}
+
+export async function getNombrePartidoConId(idPartido) {
+    try {
+        const response = await fetch('../../../controlador/select/selectNombrePartidoIdPartido.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({idPartido: idPartido})
+        });
+        const data = await response.json();
+        return await data;
+    } catch (error) {
+        console.error('Error en getNombrePartido',error);
         return [];
     }
 }
@@ -408,13 +414,15 @@ export async function updateCandidatoFormUpdate(atributos) {
                 dni: atributos.dni,
                 localidad: atributos.localidad,
                 eleccion: atributos.eleccion,
-                preferencia: atributos.preferencia
+                preferencia: atributos.preferencia,
+                localidad: atributos.localidad,
+                idPartido: atributos.idPartido 
             })
         });
         if (!response.ok) {
             throw new Error('Ha habido un error en la conexión con selectTodasEleccion.php');
         }
-        const data = await response.json();  // Lee la respuesta solo una vez
+        const data = await response.json();
         console.log('Respuesta de getElecciones: ');
         console.log(data);
         if (data.exito) return data.exito;
@@ -450,27 +458,26 @@ export async function deleteCandidato(idCandidato) {
     }
 }
 
-export async function updatePartido(datos) {
+export async function updatePartido(formData) {
     try {
         const response = await fetch('../../../controlador/update/updateUnPartido.php', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(datos)
+            body: formData // Enviar FormData (sin headers!)
         });
-        if (!response.ok) {
-            throw new Error('Ha habido un error en la conexión con selectTodasEleccion.php');
-        }
-        const data = await response.json();
-        console.log('RESPUESTA:');
-        console.log(data);
-        if (data.exito) return data.exito;
-        if (data.error) return data.error;
-    } catch (error) {
 
+        if (!response.ok) {
+            throw new Error('Error en la conexión con updateUnPartido.php');
+        }
+
+        const data = await response.json();
+        console.log('RESPUESTA:', data);
+
+        return alert(data.exito) || data.error;
+    } catch (error) {
+        console.error('Error:', error);
     }
 }
+
 
 export async function deletePartido(idPartido) {
     try {
@@ -495,7 +502,7 @@ export async function deletePartido(idPartido) {
     }
 }
 
-export async function actualizarEstadoEleccion(idEleccion, nuevoEstado){
+export async function actualizarEstadoEleccion(idEleccion, nuevoEstado) {
     console.log(idEleccion);
     console.log(nuevoEstado);
     try {
