@@ -29,13 +29,11 @@ if (isset($data['dni']) && isset($data['password'])) {
 
         if ($stmt->execute()) {
             $idUsuario = $conexion->insert_id;
-            $nombreApellido = getNombreYapellidoUsuario($idCenso, $conexion);
+
             $datosUsuario = [
                 'idUsuario' => $idUsuario,
                 'idCenso' => $idCenso,
-                'rol' => $rol,
-                'nombre' => $nombreApellido['nombre'],
-                'apellido' => $nombreApellido['apellido'];
+                'rol' => $rol
             ];
             
             $datosUsuarioJSON = json_encode($datosUsuario);
@@ -84,24 +82,5 @@ function comprobarUsuarioYaRegistrado($dni, $conexion) {
     if ($row = $result->fetch_assoc()) {
         return true;
     }
-    return false;
-}
-
-function getNombreYapellidoUsuario($idCenso, $conexion) {
-    $sql = "SELECT nombre, apellido FROM censo WHERE idCenso = ?";
-    $stmt = $conexion->prepare($sql);
-
-    if (!$stmt) {
-        die(json_encode(['error' => 'Error en la preparación de la consulta: ' . $conexion->error]));
-    }
-
-    $stmt->bind_param('i', $idCenso);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($row = $result->fetch_assoc()) {
-        return ['nombre' => $row['nombre'], 'apellido' => $row['apellido']];
-    }
-
     return false;
 }

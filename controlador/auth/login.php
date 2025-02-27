@@ -26,10 +26,12 @@ if (isset($data['dni']) && isset($data['password'])) {
         $idUsuario = $usuario['idUsuario'];
         $idCenso = $usuario['idCenso'];
         $rol = $usuario['rol'];
+        $eleccionesVotadas = getEleccionesVotadasUsuario($idUsuario, $conexion);
         $datosUsuario = [
             'idUsuario' => $idUsuario,
             'idCenso' => $idCenso,
-            'rol' => $rol
+            'rol' => $rol,
+            'eleccionesVotadas' => $eleccionesVotadas
         ];
 
         $datosUsuarioJSON = json_encode($datosUsuario);
@@ -41,5 +43,18 @@ if (isset($data['dni']) && isset($data['password'])) {
     }
 } else {
     echo json_encode(['error' => 'Faltan credenciales']);
+}
+
+function getEleccionesVotadasUsuario($idUsuario, $conexion) {
+    $sql = "SELECT idEleccion FROM registro_votantes WHERE idUsuario = ?";
+    $stmt = $conexion->prepare($sql);
+    $stmt->bind_param("i", $idUsuario);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $elecciones = [];
+    while ($row = $result->fetch_assoc()) {
+        $elecciones[] = $row['idEleccion'];
+    }
+    return $elecciones;
 }
 ?>
