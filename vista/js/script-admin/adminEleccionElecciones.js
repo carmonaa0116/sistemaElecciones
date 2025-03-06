@@ -18,14 +18,12 @@ export async function generarContenidoEleccionElecciones() {
     const modalUpdate = await createModalUpdate();
     const h1 = createHeader();
     const btnInsertar = createInsertButton();
-    const filterSelect = createFilterSelect();
     const divTabla = await createTableDiv();
 
     main.appendChild(modalInsert);
     main.appendChild(modalUpdate);
     main.appendChild(h1);
     main.appendChild(btnInsertar);
-    main.appendChild(filterSelect);
     main.appendChild(divTabla);
 
     document.body.appendChild(main);
@@ -271,28 +269,6 @@ function createInsertButton() {
         divPadre.style.display = 'block';
     });
     return btnInsertar;
-}
-
-
-
-function createFilterSelect() {
-    const filterSelect = document.createElement('select');
-    filterSelect.id = 'filter-select';
-
-    const options = [
-        { value: 'all', text: 'Todos' },
-        { value: 'nombre', text: 'Por Nombre' },
-        { value: 'siglas', text: 'Por Apellido' }
-    ];
-
-    options.forEach(optionData => {
-        const option = document.createElement('option');
-        option.value = optionData.value;
-        option.textContent = optionData.text;
-        filterSelect.appendChild(option);
-    });
-
-    return filterSelect;
 }
 
 async function createTableDiv(eleccion) {

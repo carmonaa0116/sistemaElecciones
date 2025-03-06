@@ -528,3 +528,7 @@ export async function actualizarEstadoEleccion(idEleccion, nuevoEstado) {
 
     }
 }
+
+export async function createFilteredTable(divTabla) {
+    
+}

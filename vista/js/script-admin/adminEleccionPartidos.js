@@ -18,14 +18,12 @@ export async function generarContenidoEleccionPartidos() {
     const modalUpdate = await createModalUpdate();
     const h1 = createHeader();
     const btnInsertar = createInsertButton();
-    const filterSelect = createFilterSelect();
     const divTabla = await createTableDiv();
 
     main.appendChild(modalInsert);
     main.appendChild(modalUpdate);
     main.appendChild(h1);
     main.appendChild(btnInsertar);
-    main.appendChild(filterSelect);
     main.appendChild(divTabla);
 
     document.body.appendChild(main);
@@ -55,14 +53,14 @@ async function createModalInsert() {
 function createSelectDnis(jsonDni, nombreSelect) {
     console.log('Ha entrado en createSelectDnis');
     const select = document.createElement('select');
-    select.name =`select-opciones-${nombreSelect}`;
+    select.name = `select-opciones-${nombreSelect}`;
     const defaultOption = document.createElement('option');
     defaultOption.value = "";
     defaultOption.textContent = `Selecciona ${nombreSelect}`;
     defaultOption.selected = true;
     defaultOption.disabled = true;
     select.appendChild(defaultOption);
-    for(let i = 0; i < jsonDni.value.length; i++) {
+    for (let i = 0; i < jsonDni.value.length; i++) {
         console.log(jsonDni.value[i].dni);
         const option = document.createElement('option');
         option.value = jsonDni.value[i].dni;
@@ -167,8 +165,8 @@ async function createFormUpdatePartidos() {
     idPartidoInput.name = 'idPartido';
     idPartidoInput.placeholder = 'ID Partido';
     idPartidoInput.disabled = true;
-    
-    
+
+
     const inputIdElecciones = createInput('text', 'inputIdPartido', 'ID Partido');
     inputIdElecciones.readOnly = true;
 
@@ -177,7 +175,7 @@ async function createFormUpdatePartidos() {
     const inputSiglas = createInput('text', 'inputSiglas', 'Siglas del partido');
 
     const inputImagen = createInput('file', 'inputImagen', 'Imagen del partido')
-        
+
     const preferenciaSelect = document.createElement('select');
     preferenciaSelect.name = 'preferencia';
     ['1', '2', '3'].forEach(value => {
@@ -196,17 +194,17 @@ async function createFormUpdatePartidos() {
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        
+
         const formData = new FormData(form); // Enviar como FormData
         formData.append('idPartido', document.querySelector('[name="inputIdPartido"]').value);
         formData.append('nombre', document.querySelector('[name="inputNombre"]').value);
         formData.append('siglas', document.querySelector('[name="inputSiglas"]').value);
         formData.append('imagen', document.querySelector('[name="inputImagen"]').files[0]); // Archivo de imagen
-        
+
         await updatePartido(formData);
         await generarContenidoEleccionPartidos()
     });
-    
+
 
     return form;
 }
@@ -228,29 +226,6 @@ function createInsertButton() {
     });
     return btnInsertar;
 }
-
-
-
-function createFilterSelect() {
-    const filterSelect = document.createElement('select');
-    filterSelect.id = 'filter-select';
-
-    const options = [
-        { value: 'all', text: 'Todos' },
-        { value: 'nombre', text: 'Por Nombre' },
-        { value: 'siglas', text: 'Por Apellido' }
-    ];
-
-    options.forEach(optionData => {
-        const option = document.createElement('option');
-        option.value = optionData.value;
-        option.textContent = optionData.text;
-        filterSelect.appendChild(option);
-    });
-
-    return filterSelect;
-}
-
 async function createTableDiv(eleccion) {
     const divTabla = document.createElement('div');
     divTabla.id = 'div-tabla-partidos';
@@ -284,13 +259,11 @@ function createTableHeader() {
     console.log(thead);
     return thead;
 }
-
-
 async function createTableBody() {
     const tbody = document.createElement('tbody');
     const partidos = await getPartidos();
     console.log(partidos);
-    
+
     partidos.forEach(partido => {
         const tr = document.createElement('tr');
 
@@ -306,7 +279,12 @@ async function createTableBody() {
         // Crear celda para la imagen
         const tdImagen = document.createElement('td');
         const img = document.createElement('img');
-        img.src = partido.imagen ? partido.imagen : '../../img/no-image.png'; 
+
+        setTimeout(() => {
+            img.src = "data:image/png;base64," + partido.imagen;  // Usar base64 si no excede el tamaño
+        }, 30);
+
+
         img.alt = partido.nombre;
         img.style.width = '4vw'; // Ajustar el tamaño si es necesario
         img.style.height = 'auto';
@@ -340,7 +318,8 @@ async function createTableBody() {
 
 
 
-async function fillUpdateForm(datosFila){
+
+async function fillUpdateForm(datosFila) {
     const formUpdate = document.getElementById('modal-form-update');
     console.log(datosFila);
     formUpdate.querySelector('[name="inputIdPartido"]').value = datosFila.idPartido;
@@ -374,7 +353,7 @@ async function createModalUpdate() {
     contenidoModal.appendChild(form);
     contenidoModal.appendChild(deleteButton);
     modalPadre.appendChild(contenidoModal);
-    
+
 
     return modalPadre;
 }

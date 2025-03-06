@@ -10,14 +10,12 @@ export async function generarContenidoEleccionCandidatos() {
     const modalUpdate = await createModalUpdate();
     const h1 = createHeader();
     const btnInsertar = createInsertButton();
-    const filterSelect = createFilterSelect();
     const divTabla = await createTableDiv();
 
     main.appendChild(modalInsert);
     main.appendChild(modalUpdate);
     main.appendChild(h1);
     main.appendChild(btnInsertar);
-    main.appendChild(filterSelect);
     main.appendChild(divTabla);
 
     document.body.appendChild(main);
@@ -248,28 +246,6 @@ function createInsertButton() {
 
 
 
-function createFilterSelect() {
-    const filterSelect = document.createElement('select');
-    filterSelect.id = 'filter-select';
-
-    const options = [
-        { value: 'all', text: 'Todos' },
-        { value: 'localidad', text: 'Por Localidad' },
-        { value: 'fechaNacimiento', text: 'Por Fecha de Nacimiento' },
-        { value: 'nombre', text: 'Por Nombre' },
-        { value: 'apellido', text: 'Por Apellido' }
-    ];
-
-    options.forEach(optionData => {
-        const option = document.createElement('option');
-        option.value = optionData.value;
-        option.textContent = optionData.text;
-        filterSelect.appendChild(option);
-    });
-
-    return filterSelect;
-}
-
 async function createTableDiv(eleccion) {
     const divTabla = document.createElement('div');
     divTabla.id = 'div-tabla-censo';
@@ -278,7 +254,7 @@ async function createTableDiv(eleccion) {
     table.id = 'tabla-censo';
 
     const thead = createTableHeader(eleccion);
-    const tbody = await createTableBody(eleccion);
+    const tbody = await createTableBody();
 
 
     table.appendChild(thead);
