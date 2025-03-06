@@ -310,6 +310,7 @@ table {
     justify-content: center;
 }
 
+
 .partido{
     border-radius: 10px;
     border: 1px solid white;
@@ -754,3 +755,4 @@ select::-webkit-scrollbar-thumb {
 select::-webkit-scrollbar-track {
     background: #600000;
 }
+

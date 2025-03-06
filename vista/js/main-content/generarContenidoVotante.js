@@ -51,6 +51,9 @@ function generateButtons() {
 
     const resultsButton = document.createElement('button');
     resultsButton.textContent = 'VER RESULTADOS';
+    resultsButton.addEventListener('click', () => {
+        window.location.href = './votantes/verResultados.html';
+    });
 
     buttonContainer.appendChild(voteButton);
     buttonContainer.appendChild(resultsButton);
