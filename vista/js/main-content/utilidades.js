@@ -5,9 +5,8 @@ export function crearBotonCerrarSesion() {
     console.log("boton cerrar sesion");
     console.log(botonCerrarSesion);
     botonCerrarSesion.addEventListener('click', () => {
-        console.log("Cerrando sesión...");
+        console.log('hola')
         window.location.href = '../../index.html';
     });
-
     return botonCerrarSesion;
 }

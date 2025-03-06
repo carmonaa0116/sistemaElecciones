@@ -1,6 +1,7 @@
 import { getDnisCenso, getIdElecciones, getLocalidades, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato, getNombrePartidoConId } from "./apiAdmin.js";
 import { createSubmitButton, createCloseButton, createDeleteButton, createLabeledField } from "./generarContenidoSinEleccion.js";
 import { getPartidos } from "./apiAdmin.js";
+
 export async function generarContenidoEleccionCandidatos() {
     const main = document.querySelector('main');
     main.innerHTML = '';
@@ -401,6 +402,8 @@ async function createModalUpdate() {
         const idCandidato = formData.get('idCandidato');
 
         await deleteCandidato(idCandidato);
+        await generarContenidoEleccionCandidatos();
+
     });
 
     contenidoModal.appendChild(closeButton);

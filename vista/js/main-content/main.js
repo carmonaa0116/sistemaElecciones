@@ -12,6 +12,7 @@ async function mostrarContenido() {
         }
 
         const data = await response.json();
+        console.log(data);
 
         if (data.error) {
             console.error('Error en los datos del usuario:', data.error);
