@@ -1,4 +1,4 @@
-import { getDnisCenso, getIdElecciones, getLocalidades, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato, getNombrePartidoConId } from "./apiAdmin.js";
+import { getDnisCenso, getIdElecciones, getLocalidades, getDatosCenso, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato, getNombrePartidoConId } from "./apiAdmin.js";
 import { createSubmitButton, createCloseButton, createDeleteButton, createLabeledField } from "./generarContenidoSinEleccion.js";
 import { getPartidos } from "./apiAdmin.js";
 
@@ -269,7 +269,7 @@ function createTableHeader() {
     thead.id = 'theadCandidatos';
     const tr = document.createElement('tr');
 
-    ['idCandidato', 'idCenso', 'idLocalidad', 'idEleccion', 'preferencia', 'partido'].forEach(text => {
+    ['idCandidato', 'DNI', 'Localidad', 'Eleccion', 'Preferencia', 'Partido'].forEach(text => {
         const th = document.createElement('th');
         th.textContent = text;
         tr.appendChild(th);
@@ -285,17 +285,21 @@ async function createTableBody() {
     const candidatos = await getCandidatosNombre();
 
     for (const candidato of candidatos) {
+
+        const datosCenso = await getDatosCenso(candidato.idCenso);
+        console.log(datosCenso);
         const tr = document.createElement('tr');
 
         const tdIdCandidato = document.createElement('td');
         tdIdCandidato.textContent = candidato.idCandidato;
 
         const tdIdCenso = document.createElement('td');
-        tdIdCenso.textContent = candidato.idCenso;
+        tdIdCenso.textContent = datosCenso.censo.dni;
 
         const tdIdLocalidad = document.createElement('td');
-        tdIdLocalidad.textContent = candidato.idLocalidad;
-
+        const localidad = await getUnaLocalidadIdLocalidad(candidato.idLocalidad);
+        tdIdLocalidad.textContent = localidad.nombre;
+        
         const tdIdEleccion = document.createElement('td');
         tdIdEleccion.textContent = candidato.idEleccion;
 

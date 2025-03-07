@@ -179,6 +179,10 @@ async function createFormInsertElecciones() {
         const fechaInicio = formData.get('inputFechaInicio');
         const fechaFin = formData.get('inputFechaFin');
 
+        if(fechaInicio > fechaFin) {
+            alert('La fecha de inicio no puede ser mayor a la fecha de fin');
+            return;
+        }
 
 
         await insertarEleccion(tipo, estado, fechaInicio, fechaFin);
@@ -234,6 +238,11 @@ async function createFormUpdatePartidos() {
         const estado = formData.get('select-opciones-estado');
         const fechaInicio = formData.get('inputFechaInicio');
         const fechaFin = formData.get('inputFechaFin');
+
+        if(fechaInicio > fechaFin) {
+            alert('Le fecha de inicio debe de ser menor que la fecha de fin');
+            return;
+        }
 
         const atributos = {
             idEleccion: idEleccion,

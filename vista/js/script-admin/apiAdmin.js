@@ -334,12 +334,12 @@ export async function getNombrePartidoConId(idPartido) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({idPartido: idPartido})
+            body: JSON.stringify({ idPartido: idPartido })
         });
         const data = await response.json();
         return await data;
     } catch (error) {
-        console.error('Error en getNombrePartido',error);
+        console.error('Error en getNombrePartido', error);
         return [];
     }
 }
@@ -416,7 +416,7 @@ export async function updateCandidatoFormUpdate(atributos) {
                 eleccion: atributos.eleccion,
                 preferencia: atributos.preferencia,
                 localidad: atributos.localidad,
-                idPartido: atributos.idPartido 
+                idPartido: atributos.idPartido
             })
         });
         if (!response.ok) {
@@ -529,6 +529,21 @@ export async function actualizarEstadoEleccion(idEleccion, nuevoEstado) {
     }
 }
 
-export async function createFilteredTable(divTabla) {
-    
+export async function getDatosCenso(idCenso) {
+    try {
+        const response = await fetch('../../../controlador/select/selectUnCensoIdCenso.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                idCenso: idCenso
+            })
+        });
+        if (!response.ok) {
+            throw new Error('Ha habido un error de conexion con selectUnCensoIdCenso.php');
+        }
+        return await response.json();
+        
+    } catch (error) { }
 }

@@ -61,7 +61,7 @@ function generarFormularioRegistro() {
     mensaje.textContent = "¿Ya tienes cuenta? Inicia sesión aquí:";
 
     const enlaceLogin = document.createElement('a');
-    enlaceLogin.href = "login.html";
+    enlaceLogin.href = "../../index.html";
     enlaceLogin.textContent = "Login";
 
     // Mensaje de error
@@ -139,8 +139,7 @@ function generarFormularioRegistro() {
                         window.location.href = "../html/main.php";
                     }
                     if (data.error) {
-                        console.log(data.error);
-                        mensajeError.textContent = data.error;
+                        alert(data.error);
                     }
                 })
                 .catch(error => {

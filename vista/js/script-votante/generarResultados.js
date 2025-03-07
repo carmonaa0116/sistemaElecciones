@@ -71,6 +71,13 @@ function createEleccionDiv(eleccion) {
     divEleccion.appendChild(img);
     divEleccion.appendChild(nombre);
 
+    divEleccion.style.margin = '10px';
+    divEleccion.style.height= '20vh';
+    
+    divEleccion.addEventListener('mouseover', () => {
+        divEleccion.style.cursor = 'pointer';
+    });
+
     divEleccion.addEventListener('click', async () => {
         console.log(eleccion.idEleccion);
         await createDivResultados(eleccion.idEleccion);
