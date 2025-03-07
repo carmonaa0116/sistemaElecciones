@@ -55,9 +55,16 @@ function generateButtons() {
         window.location.href = './votantes/verResultados.html';
     });
 
+    const editProfileButton = document.createElement('button');
+    editProfileButton.textContent = 'EDITAR PERFIL';
+    editProfileButton.addEventListener('click', () => {
+        window.location.href = './votantes/editarPerfil.html';
+    });
+
+
     buttonContainer.appendChild(voteButton);
     buttonContainer.appendChild(resultsButton);
-
+    buttonContainer.appendChild(editProfileButton);
 
 
     return buttonContainer;

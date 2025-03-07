@@ -242,3 +242,32 @@ export async function getResultadosEleccion(idEleccion){
         console.error('Error en getPartidos() ', error);
     }
 }
+export async function actualizarUsuario({ correo, password,  idUsuario, idCenso }) {
+    const fetchOptions = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ correo, password, idCenso, idUsuario })
+    };
+
+    try {
+        const response = await fetch('../../../controlador/update/updateUsuario.php', fetchOptions);
+
+        if (!response.ok) {
+            throw new Error('Error en la conexión con updateUsuario.php');
+        }
+
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error(data.error);
+            throw new Error(data.error);
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error en actualizarUsuario():', error);
+        throw error;
+    }
+}
