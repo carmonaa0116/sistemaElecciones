@@ -3,6 +3,12 @@ import { createSubmitButton, createCloseButton, createDeleteButton, createLabele
 import { getPartidos } from "./apiAdmin.js";
 import { createHeader } from "../main-content/utilidades.js";
 
+/* 
+    FALTA POR HACER LA FUNCION DE DELETE ELECCION, 
+    Y CREO QUE ACTUALIZAR TAMBIÉN, ASI QUE CUANDO TOQUES ESTO,
+    ASEGURATE DE CREARLAS TAMBIÉN.
+*/
+
 export async function generarContenidoEleccionElecciones() {
     
     const main = document.querySelector('main');
@@ -107,6 +113,16 @@ async function createInsertButton(borrarBtn, actualizarBtn, insertar) {
     btnInsertar.textContent = 'Insertar Eleccion';
     
     btnInsertar.addEventListener('click', async (event) => {
+
+        let tipoEleccion = document.getElementById('select-opciones-tipo');
+        let fechaInicioEleccion = document.getElementById('select-opciones-fechainicio');
+        let fechaFinEleccion = document.getElementById('select-opciones-fechafin');
+        let estadoEleccion = document.getElementById('select-opciones-estado');
+
+        tipoEleccion.value = null;
+        fechaInicioEleccion.value = null;
+        fechaFinEleccion.value = null;
+        estadoEleccion.value = null;
         
         event.preventDefault();
 
@@ -125,13 +141,28 @@ async function createInsertButton(borrarBtn, actualizarBtn, insertar) {
             event.preventDefault();
 
             // OBTENER LOS VALORES DE LOS SELECTS
-            const tipoEleccion = document.getElementById('select-opciones-tipo').value;
-            const fechaInicioEleccion = document.getElementById('select-opciones-fechainicio').value;
-            const fechaFinEleccion = document.getElementById('select-opciones-fechafin').value;
-            const estadoEleccion = document.getElementById('select-opciones-estado').value;
+            tipoEleccion = tipoEleccion.value;
+            fechaInicioEleccion = fechaInicioEleccion.value;
+            fechaFinEleccion = fechaFinEleccion.value;
+            estadoEleccion = estadoEleccion.value;
 
-            let insertandoCandidato = await insertarEleccion(tipoEleccion, estadoEleccion, fechaInicioEleccion, fechaFinEleccion);
-            console.log(insertandoCandidato);
+            console.log(tipoEleccion);
+            console.log(fechaInicioEleccion);
+            console.log(fechaFinEleccion);
+            console.log(estadoEleccion);
+
+            let insertarEleccionABBDD = await insertarEleccion(tipoEleccion, estadoEleccion, fechaInicioEleccion, fechaFinEleccion)
+                .then(data => {
+                    if(data.success){
+                        location.reload();
+                        return data;
+                        
+                    }
+                    return data;
+                })
+                .catch(error => {
+                    console.log(error);
+                });
         })
 
 
@@ -219,11 +250,6 @@ async function createGridTable(gridTable){
             const fechaInicioEleccionSelect = document.getElementById('select-opciones-fechainicio');
             const fechaFinEleccionSelect = document.getElementById('select-opciones-fechafin');
             const estadoEleccionSelect = document.getElementById('select-opciones-estado');
-
-            console.log(tipoEleccion.value);
-            console.log(fechaInicioEleccion.value);
-            console.log(fechaFinEleccion.value);
-            console.log(estadoEleccion.value);
             
 
             tipoEleccionSelect.value = tipoEleccion;
@@ -234,7 +260,8 @@ async function createGridTable(gridTable){
             // GESTION DEL BORRARDO Y ACTUALIZACION
             borrarBtn.addEventListener('click', async (event) => {
                 event.preventDefault();
-                let borrado = await eliminar(candidato.idCandidato);
+                // POR HACER LA FUNCION DE DELETE ELECCION
+                let borrado = await deleteEleccion(idEleccion);
                 console.log(borrado);
                 createGridTable(gridTable);
             })
