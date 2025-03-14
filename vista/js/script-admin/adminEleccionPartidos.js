@@ -157,6 +157,7 @@ async function createFormInsertPartido() {
 
 
 async function createFormUpdatePartidos() {
+    
     const form = document.createElement('form');
     form.id = 'modal-form-update';
 

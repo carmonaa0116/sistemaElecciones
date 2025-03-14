@@ -453,6 +453,49 @@ export async function deleteCandidato(idCandidato) {
         console.error('Error en updateCandidato: ', error);
     }
 }
+export async function deleteEleccion(idEleccion) {
+    try {
+        const response = await fetch('../../../controlador/delete/deleteEleccion.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                idEleccion: idEleccion
+            })
+        });
+        if (!response.ok) {
+            throw new Error('Ha habido un error en la conexión con deleteEleccion.php');
+        }
+        const data = await response.json();  // Lee la respuesta solo una vez
+        console.log(data);
+        if (data.exito) return data.exito;
+        if (data.error) return data.error;
+
+    } catch (error) {
+        console.error('Error en updateCandidato: ', error);
+    }
+}
+
+export async function updateEleccion(formData) {
+    try {
+        const response = await fetch('../../../controlador/update/updateEleccion.php', {
+            method: 'POST',
+            body: formData // Enviar FormData (sin headers!)
+        });
+
+        if (!response.ok) {
+            throw new Error('Error en la conexión con updateUnPartido.php');
+        }
+
+        const data = await response.json();
+        console.log('RESPUESTA:', data);
+
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
 
 export async function updatePartido(formData) {
     try {

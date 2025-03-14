@@ -1,4 +1,4 @@
-import { getDnisCenso, getIdElecciones, getLocalidades, getDatosCenso, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato, getNombrePartidoConId, getElecciones, insertarEleccion, updateEleccionFormUpdate } from "./apiAdmin.js";
+import { getDnisCenso, getIdElecciones, getLocalidades, getDatosCenso, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato, getNombrePartidoConId, getElecciones, insertarEleccion, updateEleccionFormUpdate, deleteEleccion, updateEleccion } from "./apiAdmin.js";
 import { createSubmitButton, createCloseButton, createDeleteButton, createLabeledField } from "./generarContenidoSinEleccion.js";
 import { getPartidos } from "./apiAdmin.js";
 import { createHeader } from "../main-content/utilidades.js";
@@ -210,6 +210,8 @@ async function cargarSelects(){
 
 async function createGridTable(gridTable){
 
+    gridTable.innerHTML = '';
+
     let elecciones = await getElecciones();
     let modalPadre = document.getElementById('modalPadreInsert');
     const borrarBtn = document.getElementById('borrar');
@@ -262,23 +264,32 @@ async function createGridTable(gridTable){
                 event.preventDefault();
                 // POR HACER LA FUNCION DE DELETE ELECCION
                 let borrado = await deleteEleccion(idEleccion);
-                console.log(borrado);
-                createGridTable(gridTable);
+                modalPadre.style.display = 'none';
+                setTimeout(() => {
+                    createGridTable(gridTable);
+                }, 250);
             })
 
             actualizarBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+            
+                let formData = new FormData();
+                formData.append("idEleccion", idEleccion);
+                formData.append("tipoEleccion", tipoEleccionSelect.value);
+                formData.append("estadoEleccion", estadoEleccionSelect.value);
+                formData.append("fechaInicioEleccion", fechaInicioEleccionSelect.value);
+                formData.append("fechaFinEleccion", fechaFinEleccionSelect.value);
+            
+                let actualizarEleccion = await updateEleccion(formData)
+                    .then(data => {
+                        return data;
+                    })
 
-                let atributos = {
-                    idEleccion: idEleccion,
-                    tipoEleccion: tipoEleccionSelect.value,
-                    estadoEleccion: estadoEleccionSelect.value,
-                    fechaInicioEleccion: fechaInicioEleccionSelect.value,
-                    fechaFinEleccion: fechaFinEleccionSelect.value
+                if(actualizarEleccion.exito){
+                    location.reload();
                 }
 
-                event.preventDefault();
-                await updateEleccionFormUpdate(atributos);
-            })
+            });
             
         
         })
