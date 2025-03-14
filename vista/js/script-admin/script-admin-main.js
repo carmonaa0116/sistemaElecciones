@@ -2,7 +2,7 @@ import { generarContenidoEleccionCandidatos } from "./adminEleccionCandidatos.js
 import { generarContenidoEleccionPartidos } from "./adminEleccionPartidos.js";
 import { generarContenidoEleccionElecciones } from "./adminEleccionElecciones.js";
 import { getCookieNombre } from "./apiAdmin.js";
-import { generarContenidoACescrutinio } from "./adminEleccionEscrutinio.js";
+import { generarContenidoEleccionAEscrutinio } from "./adminEleccionEscrutinio.js";
 document.addEventListener('DOMContentLoaded', async () => {
     const eleccion = await getCookieNombre('eleccion');
     console.log(eleccion.valor);

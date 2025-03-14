@@ -1,181 +1,334 @@
-import { getElecciones, actualizarEstadoEleccion } from "./apiAdmin.js";
+import { getDnisCenso, getIdElecciones, getLocalidades, getDatosCenso, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato, getNombrePartidoConId } from "./apiAdmin.js";
+import { createSubmitButton, createCloseButton, createDeleteButton, createLabeledField } from "./generarContenidoSinEleccion.js";
+import { getPartidos } from "./apiAdmin.js";
+import { createHeader } from "../main-content/utilidades.js";
 
-export async function generarContenidoACescrutinio() {
+export async function generarContenidoEleccionAEscrutinio() {
+    
     const main = document.querySelector('main');
-    main.innerHTML = '';
+    
+    main.innerHTML = `
 
-    console.log('Ha entrado en adminEleccionEscrutinio.js');
+        <div id="modalPadreInsert"></div>
+        <h1>PANEL CANDIDATOS</h1>
+        <div class="gridTable">
 
-    const h1 = createHeader();
-    const h2 = document.createElement('h2');
-    h2.textContent = 'ELIGE UNAS ELECCIONES PARA ADMINISTRARLAS';
+            <div class="gridTitleHeader">
 
-    const divElecciones = document.createElement('div');
-    divElecciones.id = 'divContenedorElecciones';
+                <h2>idCandidato</h2>
+                <h2>idCenso</h2>
+                <h2>Partido</h2>
+                <h2>Localidad</h2>
+                <h2>Numero Candidato</h2>
+                <h2>Eleccion Asociada</h2>
 
-    await rellenarDivElecciones(divElecciones);
+            </div>
 
-    const modal = createModal();
+            <div class="gridTableBody" id="gridTableBody">
 
-    main.appendChild(h1);
-    main.appendChild(h2);
-    main.appendChild(divElecciones);
-    main.appendChild(modal);
-}
-
-function createHeader() {
-    const h1 = document.createElement('h1');
-    h1.textContent = `ADMINISTRACIÓN DE ESCRUTINIO`;
-    return h1;
-}
-
-function createModal() {
-    const divModal = document.createElement('div');
-    divModal.className = 'modalInsert';
-    divModal.style.display = 'none';
-    divModal.style.position = 'fixed';
-    divModal.style.top = '0';
-    divModal.style.left = '0';
-    divModal.style.width = '100%';
-    divModal.style.height = '100%';
-    divModal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    divModal.style.alignItems = 'center';
-    divModal.style.justifyContent = 'center';
-
-    const modalContent = document.createElement('div');
-    modalContent.style.backgroundColor = '#600000';
-    modalContent.style.padding = '20px';
-    modalContent.style.borderRadius = '10px';
-    modalContent.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-    modalContent.style.textAlign = 'center';
-    modalContent.style.maxWidth = '400px';
-
-    const mensaje = document.createElement('p');
-    mensaje.id = 'modalMensaje';
-
-    const btnAbrir = document.createElement('button');
-    btnAbrir.textContent = 'Abrir';
-    btnAbrir.style.margin = '10px';
-    btnAbrir.id = 'btnAbrir';
-
-    const btnCerrar = document.createElement('button');
-    btnCerrar.textContent = 'Cerrar';
-    btnCerrar.style.margin = '10px';
-    btnCerrar.id = 'btnCerrar';
-
-    const btnFinalizar = document.createElement('button');
-    btnFinalizar.textContent = 'Finalizar';
-    btnFinalizar.style.margin = '10px';
-    btnFinalizar.id = 'btnFinalizar';
-    btnFinalizar.style.backgroundColor = 'red';
-    btnFinalizar.style.color = 'white';
-
-    const btnCancelar = document.createElement('button');
-    btnCancelar.textContent = 'Cancelar';
-    btnCancelar.style.margin = '10px';
-    btnCancelar.onclick = () => {
-        divModal.style.display = 'none';
-    };
-
-    modalContent.appendChild(mensaje);
-    modalContent.appendChild(btnAbrir);
-    modalContent.appendChild(btnCerrar);
-    modalContent.appendChild(btnFinalizar);
-    modalContent.appendChild(btnCancelar);
-    divModal.appendChild(modalContent);
-
-    return divModal;
-}
-
-function mostrarModal(idEleccion) {
-    const modal = document.querySelector('.modalInsert');
-    if (!modal) {
-        console.error("El modal no se encontró en el DOM.");
-        return;
-    }
-
-    const mensaje = document.getElementById('modalMensaje');
-    if (mensaje) {
-        mensaje.textContent = `Administrar elección Nº ${idEleccion}`;
-    }
-
-    modal.style.display = 'flex';
-
-    document.getElementById('btnAbrir').onclick = async () => {
-        actualizarEstadoEleccion(idEleccion, 'abierta');
-        actualizarUIEleccion(idEleccion, 'abierta', 'green');
-        modal.style.display = 'none';
-    };
-
-    document.getElementById('btnCerrar').onclick = async () => {
-        actualizarEstadoEleccion(idEleccion, 'cerrada');
-        actualizarUIEleccion(idEleccion, 'cerrada', 'orange');
-        modal.style.display = 'none';
-    };
-
-    document.getElementById('btnFinalizar').onclick = async () => {
-        actualizarEstadoEleccion(idEleccion, 'finalizada');
-        actualizarUIEleccion(idEleccion, 'finalizada', 'red');
-        modal.style.display = 'none';
-    };
-}
-
-function actualizarUIEleccion(idEleccion, estado, color) {
-    const divCambiado = document.querySelector(`#divEleccion-${idEleccion}`);
-    if (divCambiado) {
-        divCambiado.querySelector('.divEstado').style.backgroundColor = color;
-        divCambiado.querySelector('.textoEstado').textContent = estado;
-    }
-}
-
-async function rellenarDivElecciones(divElecciones) {
-    const elecciones = await getElecciones();
-    console.log(elecciones);
-
-    elecciones.forEach((eleccion, index) => {
-        setTimeout(() => {
-
-            const divEleccion = document.createElement('div');
-            divEleccion.classList.add(`divEleccion`);
-            divEleccion.id = `divEleccion-${eleccion.idEleccion}`;
-            divEleccion.style.opacity = 0;
-            divEleccion.style.transition = 'opacity 0.5s ease-in-out';
-
-            const divNumeroEleccion = document.createElement('div');
-            const textoNumeroEleccion = document.createElement('p');
-            textoNumeroEleccion.textContent = `ELECCIÓN Nº ${eleccion.idEleccion}`;
-            divNumeroEleccion.appendChild(textoNumeroEleccion);
-
-            const divEstado = document.createElement('div');
-            divEstado.className = 'divEstado';
-            const textoEstado = document.createElement('p');
-            textoEstado.className = 'textoEstado';
-            textoEstado.textContent = eleccion.estado;
-
-            const divFechaInicio = document.createElement('div');
-            divFechaInicio.textContent = `Inicio: ${eleccion.fechaInicio}`;
+                <!-- Aquí se generará la tabla -->
             
-            const divFechaFin = document.createElement('div');
-            divFechaFin.textContent = `Fin: ${eleccion.fechaFin}`;
+            </div>
+        
+        </div>
 
-            divEstado.style.backgroundColor = eleccion.estado === 'finalizada' ? 'red' : eleccion.estado === 'cerrada' ? 'orange' : 'green';
-            divEstado.style.color = 'black';
-            divEstado.appendChild(textoEstado);
+    
+    `;
 
-            divEleccion.appendChild(divNumeroEleccion);
-            divEleccion.appendChild(divFechaInicio);
-            divEleccion.appendChild(divFechaFin);
-            divEleccion.appendChild(divEstado);
+    const contenidoModal = `
 
-            divElecciones.appendChild(divEleccion);
+        <button type="submit" class="btn-close" id="cerrar">Cerrar</button>
 
-            setTimeout(() => {
-                divEleccion.style.opacity = 1;
-            }, 50);
+        <form class="formularioModal">
+        
+            <div class="flexModalSection">
+            
+                <div>
+                    <label for="select-opciones-dni">DNI:</label>
+                    <select name="select-opciones-dni" id="select-opciones-dni"></select>
+                </div>
 
-            divEleccion.addEventListener('click', () => {
-                mostrarModal(eleccion.idEleccion);
-            });
-        }, index * 500);
+                <div>
+                    <label for="select-opciones-localidad">Localidad:</label>
+                    <select name="select-opciones-localidad" id="select-opciones-localidad"></select>
+                </div>
+            
+            </div>
+
+            <div class="flexModalSection">
+            
+                <div>
+                    <label for="select-opciones-idElecciones">Elección:</label>
+                    <select name="select-opciones-idElecciones" id="select-opciones-idElecciones"></select>
+                </div>
+
+                <div>
+                    <label for="select-opciones-preferencia">Preferencia:</label>
+                    <select name="select-opciones-preferencia" id="select-opciones-preferencia"></select>
+                </div>
+            
+            </div>
+
+            <div>
+                <label for="select-opciones-partidos">Partido:</label>
+                <select name="select-opciones-partidos" id="select-opciones-partidos"></select>
+            </div>
+
+            <div class="buttonModalSection">
+
+                <button type="submit" class="btn-submit" id="insertar">Insertar</button>
+                <button type="submit" class="btn-delete" id="borrar">Borrar</button>
+                <button type="submit" class="btn-update" id="actualizar">Actualizar</button>
+
+            </div>
+        
+        </form>
+
+    `;
+
+    let modalPadre = document.getElementById('modalPadreInsert');
+    modalPadre.style.display = 'none';
+    modalPadre.innerHTML = contenidoModal;
+
+    const gridTableBody = document.getElementById('gridTableBody');
+    const borrarBtn = document.getElementById('borrar');
+    const actualizarBtn = document.getElementById('actualizar');
+    const cerrarBtn = document.getElementById('cerrar');
+    const insertar = document.getElementById('insertar');
+    const btnInsertar = await createInsertButton(borrarBtn, actualizarBtn, insertar); 
+
+
+    createGridTable(gridTableBody)
+    cerrarBtn.addEventListener("click", () => handleCerrarBtn(modalPadre))
+
+    main.appendChild(btnInsertar);
+    document.body.appendChild(main);
+}
+
+
+// AQUI SE CREA EL INSERT BUTTON DONDE CARGA INFORMACIÖN DENTRO DE LOS SELECTS
+async function createInsertButton(borrarBtn, actualizarBtn, insertar) {
+    const btnInsertar = document.createElement('button');
+    btnInsertar.id = 'btn-insertar';
+    btnInsertar.textContent = 'Insertar Candidato';
+    
+    btnInsertar.addEventListener('click', async (event) => {
+        
+        event.preventDefault();
+
+        const divPadre = document.getElementById('modalPadreInsert');
+        divPadre.style.display = 'flex';
+        insertar.style.display = 'block';
+        borrarBtn.style.display = "none";
+        actualizarBtn.style.display = "none";
+
+        // RELLENANDO LOS CAMPOS DEL FORMULARIO
+        await cargarSelects()
+
+        insertar.addEventListener('click', async (event) => {
+
+            // Prevent the default form submission
+            event.preventDefault();
+
+            // OBTENER LOS VALORES DE LOS SELECTS
+            const dni = document.getElementById('select-opciones-dni').value;
+            const localidad = document.getElementById('select-opciones-localidad').value;
+            const idElecciones = document.getElementById('select-opciones-idElecciones').value;
+            const preferencia = document.getElementById('select-opciones-preferencia').value;
+            const partido = document.getElementById('select-opciones-partidos').value;
+
+            let insertandoCandidato = await insertarCandidato(dni, localidad, idElecciones, preferencia, partido);
+            console.log(insertandoCandidato);
+        })
+
+
     });
+
+    return btnInsertar;
+}
+
+// RELLENANDO LOS CAMPOS DE LOS FORMULARIOS
+async function cargarSelects(){
+    
+    // AQUÍ EMPIEZA EL CÓDIGO PARA CARGAR LOS DATOS PARA EL MODAL
+    async function createSelectDnis() {
+
+
+        let jsonDni = await getDnisCenso();
+        let selectDNIS = document.getElementById('select-opciones-dni');
+        // Opción por defecto
+        const defaultOption = document.createElement('option');
+        defaultOption.value = ""; // Valor null en HTML se representa con una cadena vacía
+        defaultOption.textContent = `Selecciona Dni`;
+        defaultOption.selected = true;
+        defaultOption.disabled = true;
+        selectDNIS.appendChild(defaultOption);
+
+        let listaDNIs = jsonDni.value;
+
+        listaDNIs.forEach(dni => {
+            const option = document.createElement('option');
+            option.value = dni.dni;
+            option.textContent = dni.dni;
+            selectDNIS.append(option);
+        });
+    }
+
+    async function createSelectIdElecciones() {
+        
+        let jsonElecciones = await getIdElecciones();
+        let selectIdElecciones = document.getElementById('select-opciones-idElecciones');
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = "";
+        defaultOption.textContent = `Selecciona elecciones`;
+        defaultOption.selected = true;
+        defaultOption.disabled = true;
+        selectIdElecciones.appendChild(defaultOption);
+
+        jsonElecciones.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item;
+            option.textContent = item;
+            selectIdElecciones.append(option);
+        });
+
+    }
+
+    async function createSelectLocalidad() {
+        
+        let localidades = await getLocalidades();
+        let selectLocalidad = document.getElementById('select-opciones-localidad');
+
+        localidades.localidades.forEach(localidad => {
+            const option = document.createElement('option');
+            option.value = localidad.idLocalidad;
+            option.textContent = localidad.nombre;
+            selectLocalidad.appendChild(option);
+        });
+
+    }
+
+    function createSelectPreferencia() {
+
+        const selectPreferencia = document.getElementById("select-opciones-preferencia")
+
+        const optionNull = document.createElement('option');
+        optionNull.name = null;
+        optionNull.textContent = 'Selecciona la preferencia';
+
+        selectPreferencia.appendChild(optionNull);
+
+        const preferencias = ["1", "2", "3"];
+
+        preferencias.forEach(preferencia => {
+            const option = document.createElement('option');
+            option.id = `preferencia-${preferencia}`;
+            option.name = `preferencia-${preferencia}`;
+            option.textContent = preferencia;
+            selectPreferencia.appendChild(option);
+        });
+
+    }
+
+    async function createSelectPartidos() {
+        
+        let partidos = await getPartidos();
+        const selectPartidos = document.getElementById('select-opciones-partidos');
+
+        partidos.forEach(partido => {
+            const option = document.createElement('option');
+            option.value = partido.idPartido;
+            option.textContent = partido.nombre;
+            selectPartidos.appendChild(option);
+        });
+    }
+
+    await createSelectDnis();
+    await createSelectPartidos();
+    await createSelectIdElecciones();
+    await createSelectLocalidad();
+    createSelectPreferencia();
+}
+
+async function createGridTable(gridTable){
+
+    let candidatos = await getCandidatosNombre();
+    let modalPadre = document.getElementById('modalPadreInsert');
+    const borrarBtn = document.getElementById('borrar');
+    const actualizarBtn = document.getElementById('actualizar');
+    const btnInsertar = document.getElementById('insertar');
+    
+    candidatos.forEach(async candidato => {
+
+        let dniCandidato = await getUnDniConIdCenso(candidato.idCenso);
+        
+        let idCandidato = candidato.idCandidato;
+        let idCenso = candidato.idCenso;
+        let idLocalidad = candidato.idLocalidad;
+        let idEleccion = candidato.idEleccion;
+        let idPartido = candidato.idPartido;
+        let preferencia = candidato.preferencia;
+
+        const gridRow = document.createElement("div");
+        let gridRowHTML = `
+
+            <p>${idCandidato}</p>
+            <p>${idCenso}</p>
+            <p>${idPartido}</p>
+            <p>${idLocalidad}</p>
+            <p>${preferencia}</p>
+            <p>${idEleccion}</p>
+        
+        `
+
+        // ESTO ES CUANDO HACES CLIC ENCIMA DE UN CANDIDATO
+        gridRow.addEventListener("click", async () => {
+            
+            modalPadre.style.display = 'flex';
+            actualizarBtn.style.display = 'block';
+            borrarBtn.style.display = 'block';
+            btnInsertar.style.display = 'none';
+
+            await cargarSelects();
+
+            let selectDni = document.getElementById('select-opciones-dni');
+            let selectPartido = document.getElementById('select-opciones-partidos');
+            let selectIdElecciones = document.getElementById('select-opciones-idElecciones');
+            let selectLocalidad = document.getElementById('select-opciones-localidad');
+            let selectPreferencia = document.getElementById('select-opciones-preferencia');
+            
+            selectDni.value = dniCandidato.dni;
+            selectPartido.value = candidato.idPartido;
+            selectIdElecciones.value = candidato.idEleccion;
+            selectLocalidad.value = candidato.idLocalidad;
+            selectPreferencia.value = candidato.preferencia;
+
+        })
+
+
+        // GESTION DEL BORRARDO Y ACTUALIZACION
+        borrarBtn.addEventListener('click', async (event) => {
+            event.preventDefault();
+            let borrado = await deleteCandidato(candidato.idCandidato);
+            console.log(borrado);
+            createGridTable(gridTable);
+        })
+
+        actualizarBtn.addEventListener('click', async (event) => {
+            event.preventDefault();
+            await updateCandidato(candidato.idCandidato, candidato.idCenso, candidato.idPartido, candidato.idLocalidad, candidato.preferencia, candidato.idEleccion);
+            location.reload();
+        })
+
+        gridRow.innerHTML = gridRowHTML;
+        gridTable.appendChild(gridRow);
+        
+
+    })
+
+}
+
+function handleCerrarBtn(modal){
+    modal.style.display = 'none';
 }

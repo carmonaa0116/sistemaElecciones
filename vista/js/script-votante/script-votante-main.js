@@ -1,5 +1,5 @@
 import { crearBotonCerrarSesion } from "../main-content/utilidades.js";
-import { getCandidatos, getPartidos, getDatosCensoUsuario, getElecciones, getDatosUsuario, votar } from "./apiVotante.js";
+import { getPartidos, getDatosCensoUsuario, getElecciones, getDatosUsuario, votar } from "./apiVotante.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     mostrarContenido();
@@ -27,8 +27,6 @@ async function obtenerEleccionesNoVotadas() {
     }
 }
 
-
-// 🔹 Función principal para mostrar el contenido
 async function mostrarContenido() {
     const main = document.querySelector('main');
     main.innerHTML = ""; // Limpiar contenido previo
