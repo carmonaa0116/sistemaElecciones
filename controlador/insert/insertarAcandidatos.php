@@ -23,7 +23,27 @@ if (isset($data['dni'], $data['idLocalidad'], $data['idEleccion'], $data['prefer
             echo json_encode(['error' => 'Error al insertar candidato']);
         }
     } else {
-        echo json_encode(['error' => 'Datos inválidos']);
+        if ($idCenso && $idLocalidad && $idPartido) {
+            $sql = "INSERT INTO candidato (idCenso, idLocalidad, idEleccion, preferencia, idPartido) VALUES (?, ?, ?, ?, ?)";
+            $stmt = $conexion->prepare($sql);
+            $stmt->bind_param("iiisi", $idCenso, $idLocalidad, $idElecciones, $preferencia, $idPartido);
+        
+            if ($stmt->execute()) {
+                echo json_encode(['success' => 'Candidato insertado correctamente']);
+            } else {
+                echo json_encode(['error' => 'Error al insertar candidato']);
+            }
+        } else {
+            echo json_encode([
+                'error' => 'Datos inválidos', 
+                'debug' => [
+                    'received_data' => $data,
+                    'idCenso' => $idCenso,
+                    'idLocalidad' => $idLocalidad,
+                    'idPartido' => $idPartido
+                ]
+            ]);
+        }
     }
 } else {
     echo json_encode(['error' => 'Datos incompletos']);

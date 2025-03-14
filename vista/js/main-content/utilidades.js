@@ -10,3 +10,9 @@ export function crearBotonCerrarSesion() {
     });
     return botonCerrarSesion;
 }
+
+export function createHeader(texto) {
+    const h1 = document.createElement('h1');
+    h1.textContent = texto;
+    return h1;
+}

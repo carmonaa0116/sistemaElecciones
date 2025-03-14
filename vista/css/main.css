@@ -2,6 +2,7 @@ body {
     font-family: 'Arial', sans-serif;
     background-color: #600000;
     min-height: 100vh;
+    overflow-x: hidden;
     color: white;
     display: flex;
     justify-content: center;
@@ -34,14 +35,6 @@ label:hover {
     transition: 0.2s;
 }
 
-main {
-    text-align: center;
-    display: flex;
-    flex-wrap:nowrap;
-    flex-direction: column;
-    align-items: center;
-}
-
 #img {
     margin-bottom: 30px;
 }
@@ -64,14 +57,6 @@ h1 {
     margin-bottom: 30px;
     color: #e74c3c;
     /* Color rojo para el título */
-}
-
-form {
-    display: flex;
-    align-items: left;
-    justify-content: center;
-    text-align: center;
-    flex-direction: column;
 }
 
 button {
@@ -176,25 +161,23 @@ input::placeholder {
 }
 
 table {
-    width: 70%;
+    width: 100%;
     border-collapse: collapse;
     background-color: #800000;
     color: white;
     table-layout: fixed;
 }
 
-tbody {
-    max-height: 100px;
-    overflow-y:scroll;
-}
-
-thead th {
+thead {
     position: sticky;
     top: 0;
     background-color: #e74c3c;
-    color: white;
     z-index: 2;
-    min-height: 100px;
+}
+
+thead th {
+    padding: 10px;
+    color: white;
 }
 
 tr,
@@ -221,31 +204,15 @@ tr:hover td {
     transition: 0.2s;
 }
 
-
-#modalPadreUpdate,
-#modalPadreInsert {
-    width: 100dvw;
-    background-color: rgba(255, 255, 255, 0.493);
-    height: 100dvh;
-    position: absolute;
-    top: 0;
-    left: 0;
-
-    z-index: 999;
-    display: flex;
-    align-content: center;
-    justify-content: center;
-
-}
-
 .noVisible {
     visibility: hidden;
 }
 
 .contenidoModal {
     width: 80vw;
-    height: 80vh;
+    height: auto;
     padding: 50px;
+    box-sizing: border-box;
     margin:0 auto;
     background-color: #800000;
     border: 1px solid #E74C3C;
@@ -253,7 +220,7 @@ tr:hover td {
 
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: left;
     flex-direction: column;
 }
 
@@ -289,8 +256,8 @@ table {
     max-height: 300px;
     /* Ajusta la altura según tus necesidades */
     overflow-y: auto;
+    width: 80%;
     /* Habilitar el scroll vertical */
-    padding: 20px;
 }
 
 #div-tabla-censo::-webkit-scrollbar,  #div-tabla-partidos::-webkit-scrollbar, #div-tabla-elecciones::-webkit-scrollbar {
@@ -429,40 +396,145 @@ button:hover {
     color: #600000;
 }
 
-.modal {
-    background-color: #600000;
-    border: 2px solid #e74c3c;
-    padding: 20px;
-    border-radius: 5px;
+
+#cerrar{
+    position: absolute;
+    top: 0;
+    left: 20px;
 }
 
-form {
+.gridTable{
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    margin: 0 auto;
+    height: 500px;
+    border: 1px solid white;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.gridTable .gridTitleHeader{
+    background-color: #400000;
+    padding: 20px;
+}
+
+.gridTable .gridTableBody{
+    display: flex;
+    width: 100%;
+    background-color: #e74c3c;
+    flex-grow: 1;
+    flex-direction: column;
+    height: max-content;
+}
+
+.gridTable .gridTableBody div{
+    display: grid;
+    padding: 20px;
+    height: 75px;
+    width: 100%;
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+    border-bottom: 1px solid white;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.gridTable .gridTableBody div:hover{
+    height: 100px;
+    align-items: center;
+    background-color: #9e0003;
+}
+
+.gridTable .gridTableBody div p{
+    text-align: left;
+    margin: 0;
+    
+    
+}
+
+.gridTable .gridTitleHeader, .gridTableBody{
+    width: 100%;
+    box-sizing: border-box;
+    
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+}
+
+.gridTable .gridTitleHeader h2{
+    text-align: left;
+    font-size: 1rem;
+    margin: 0;
+}
+
+#modalPadreUpdate,
+#modalPadreInsert {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(10px);
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.formularioModal{
+    position: relative;
+    width: 80%;
+    margin: 0 auto;
+    display: flex;
+    gap: 20px;
+    flex-direction: column;
+    border: 1px solid white;
     background-color: #400000;
     padding: 20px;
     border-radius: 5px;
-    border: 2px solid #e74c3c;
-    max-width: 500px;
-    margin: auto;
+    box-shadow: 0 0 40px rgb(20, 20, 20);
+    box-sizing: border-box;
 }
 
-form label {
-    display: block;
-    margin: 10px 0 5px;
-    font-weight: bold;
+.formularioModal label{
+    text-align: left;
+    margin: 0;
 }
 
-form input, form select, form textarea {
+.formularioModal input, select{
+    text-align: left;
+    background-color: rgb(224, 224, 224) !important;
+    border: 1px solid white !important;
+    color: black !important;
+    margin: 0;
+}
+
+.formularioModal .flexModalSection{
+    display: flex;
+    gap: 20px;
     width: 100%;
-    padding: 10px;
-    border: 1px solid white;
-    background-color: #600000;
-    color: white;
-    border-radius: 5px;
 }
 
-form input:focus, form select:focus, form textarea:focus {
-    outline: none;
-    border-color: #e74c3c;
+.formularioModal .flexModalSection div{
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+}
+
+.formularioModal .buttonModalSection{
+    display: flex;
+    gap: 20px;
+    width: 100%;
+}
+
+.formularioModal .buttonModalSection #insertar{
+    width: 100%;
+}
+
+.formularioModal .buttonModalSection #borrar, #actualizar{
+    width: 50%;
 }
 
 #button-container {
@@ -555,22 +627,14 @@ main {
     justify-content: center;
     width: 100%;
     padding: 20px;
+    box-sizing: border-box;
+
 }
 
 h1 {
     font-size: 3rem;
     margin-bottom: 20px;
     color: #e74c3c;
-}
-
-form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    width: 100%;
-    max-width: 600px;
 }
 
 input, select, textarea {
@@ -602,7 +666,7 @@ button {
     transition: all 0.3s ease;
     border-radius: 5px;
     padding: 12px 20px;
-    margin-top: 15px;
+    margin-block: 15px;
 }
 
 button:hover {
@@ -628,14 +692,27 @@ button:hover {
 
 table {
     width: 100%;
+    position: relative;
     border-collapse: collapse;
     background-color: #800000;
     color: white;
 }
 
-thead th {
-    position: sticky;
+thead{
+
+    position: absolute;
     top: 0;
+    left: 0;
+    width: 100%;
+
+}
+
+thead tr{
+    width: 100%;
+}
+
+thead th {
+    
     background-color: #e74c3c;
     color: white;
     z-index: 2;
@@ -680,27 +757,12 @@ tr:hover td {
     }
 }
 
-#modalPadreUpdate,
-#modalPadreInsert {
-    width: 100vw;
-    background-color: rgba(255, 255, 255, 0.493);
-    height: 100vh;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
 .noVisible {
     visibility: hidden;
 }
 
 .contenidoModal {
-    width: 80vw;
-    height: 80vh;
+    width: 80vw;;
     padding: 50px;
     background-color: #800000;
     border: 1px solid #E74C3C;

@@ -233,7 +233,7 @@ export async function insertarCandidato(dni, idLocalidad, idEleccion, preferenci
         const data = await response.json();
         if (data.exito) console.log(data.exito);
         if (data.error) {
-            console.log(data.error);
+            console.log(data);
             return null;
         }
     } catch (error) {
