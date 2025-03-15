@@ -180,35 +180,31 @@ export async function getCookieNombre(nombre) {
     }
 }
 
-export async function insertarEleccion(tipo, estado, fechaInicio, fechaFin) {
+export async function insertarEleccion(tipo, estado, fechainicio, fechafin) {
+    let formData = new FormData();
+    formData.append('tipo', tipo);
+    formData.append('estado', estado);
+    formData.append('fechainicio', fechainicio);
+    formData.append('fechafin', fechafin);
+
     try {
-        const response = await fetch('../../../controlador/insert/insertarAeleccion.php', {
+        const response = await fetch("../../../controlador/insert/insertarAeleccion.php", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                tipo: tipo,
-                estado: estado,
-                fechaInicio: fechaInicio,
-                fechaFin: fechaFin
-            })
+            body: formData
         });
 
-        if (!response.ok) {
-            throw new Error('La respuesta no fue correcta');
-        }
-        const data = await response.json();
-        if (data.exito) console.log(data.exito);
-        if (data.error) {
-            console.log(data.error);
-            return null;
-        }
+        const text = await response.text();  // Captura la respuesta como texto para depuración
+
+        console.log("Respuesta del servidor:", text);
+
+        const datos = JSON.parse(text);  // Intenta convertir a JSON
+
+        return datos;
     } catch (error) {
-        console.error('Ha habido un problema con el fetch: ', error);
-        throw error;
+        console.error("Error en la petición:", error);
     }
 }
+
 
 
 export async function insertarCandidato(dni, idLocalidad, idEleccion, preferencia, partido) {
@@ -455,6 +451,49 @@ export async function deleteCandidato(idCandidato) {
 
     } catch (error) {
         console.error('Error en updateCandidato: ', error);
+    }
+}
+export async function deleteEleccion(idEleccion) {
+    try {
+        const response = await fetch('../../../controlador/delete/deleteEleccion.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                idEleccion: idEleccion
+            })
+        });
+        if (!response.ok) {
+            throw new Error('Ha habido un error en la conexión con deleteEleccion.php');
+        }
+        const data = await response.json();  // Lee la respuesta solo una vez
+        console.log(data);
+        if (data.exito) return data.exito;
+        if (data.error) return data.error;
+
+    } catch (error) {
+        console.error('Error en updateCandidato: ', error);
+    }
+}
+
+export async function updateEleccion(formData) {
+    try {
+        const response = await fetch('../../../controlador/update/updateEleccion.php', {
+            method: 'POST',
+            body: formData // Enviar FormData (sin headers!)
+        });
+
+        if (!response.ok) {
+            throw new Error('Error en la conexión con updateUnPartido.php');
+        }
+
+        const data = await response.json();
+        console.log('RESPUESTA:', data);
+
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
     }
 }
 

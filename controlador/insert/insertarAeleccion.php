@@ -1,36 +1,43 @@
 <?php
-require_once '../../bd/conectar.php';
-header('Content-Type: application/json');
-$data = json_decode(file_get_contents('php://input'), true);
-$conexion = $conn;
-
-if (isset($data['tipo']) && isset($data['fechaInicio']) && isset($data['fechaFin'])) {
-
-    $tipo = $data['tipo'];
-    $fechaInicio = $data['fechaInicio'];
-    $fechaFin = $data['fechaFin'];
-    // Insertar los datos en la base de datos
-    $sql = "INSERT INTO eleccion (tipo, fechaInicio, fechaFin) VALUES (?, ?, ?)";
-    $stmt = $conexion->prepare($sql);
-
-    if ($stmt) {
-        $stmt->bind_param("sss", $tipo, $fechaInicio, $fechaFin);
-        $stmt->execute();
-
-        if ($stmt->affected_rows > 0) {
-            echo json_encode(['success' => 'Eleccion añadido correctamente']);
-        } else {
-            echo json_encode(['error' => 'Error al insertar la eleccion']);
+    require_once '../../bd/conectar.php';
+    header('Content-Type: application/json');
+    
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    
+    try {
+        $conexion = $conn; // Asegúrate de que $conn es una conexión MySQLi válida
+    
+        $tipo = $_POST['tipo'];
+        $estado = $_POST['estado'];
+        $fechainicio = $_POST['fechainicio'];
+        $fechafin = $_POST['fechafin'];
+    
+        // Consulta con MySQLi
+        $stmt = $conexion->prepare("INSERT INTO eleccion (tipo, estado, fechainicio, fechafin) VALUES (?, ?, ?, ?)");
+        
+        if (!$stmt) {
+            echo json_encode(["error" => "Error en la preparación de la consulta"]);
+            exit;
         }
-
+    
+        // Aquí usamos bind_param() en lugar de bindParam()
+        $stmt->bind_param("ssss", $tipo, $estado, $fechainicio, $fechafin); // "ssss" indica que son strings
+    
+        $stmt->execute();
+    
+        if ($stmt->affected_rows > 0) {
+            echo json_encode(["success" => true, "message" => "Elección registrada correctamente"]);
+        } else {
+            echo json_encode(["message" => "Error al registrar la elección", "data" => $stmt->error_list]);
+        }
+    
         $stmt->close();
-    } else {
-        echo json_encode(['error' => 'Error al preparar la consulta']);
+    } catch (Exception $e) {
+        echo json_encode(['error' => $e->getMessage()]);
     }
-} else {
-    echo json_encode([
-        'error' => 'Datos faltantes',
-        'datos_recibidos' => $data
-    ]);
-    exit;
-}
+    
+    exit;    
+
+?>
+

@@ -89,9 +89,194 @@ export async function generarContenidoEleccionPartidos() {
     document.body.appendChild(main);
 }
 
+async function createModalInsert() {
+    const modalPadre = document.createElement('div');
+    modalPadre.id = 'modalPadreInsert';
+    modalPadre.style.display = 'none';
+    const contenidoModal = document.createElement('div');
+    contenidoModal.className = 'contenidoModal';
 
-// AQUI SE CREA EL INSERT BUTTON DONDE CARGA INFORMACIÖN DENTRO DE LOS SELECTS
-async function createInsertButton(borrarBtn, actualizarBtn, insertar) {
+    const form = await createFormInsertPartido();
+    console.log('FORMULARIO:');
+    console.log(form);
+
+
+    const closeButton = createCloseButton(modalPadre);
+    contenidoModal.appendChild(closeButton);
+    contenidoModal.appendChild(form);
+
+    modalPadre.appendChild(contenidoModal);
+
+    return modalPadre;
+}
+
+function createSelectDnis(jsonDni, nombreSelect) {
+    console.log('Ha entrado en createSelectDnis');
+    const select = document.createElement('select');
+    select.name = `select-opciones-${nombreSelect}`;
+    const defaultOption = document.createElement('option');
+    defaultOption.value = "";
+    defaultOption.textContent = `Selecciona ${nombreSelect}`;
+    defaultOption.selected = true;
+    defaultOption.disabled = true;
+    select.appendChild(defaultOption);
+    for (let i = 0; i < jsonDni.value.length; i++) {
+        console.log(jsonDni.value[i].dni);
+        const option = document.createElement('option');
+        option.value = jsonDni.value[i].dni;
+        option.textContent = jsonDni.value[i].dni;
+        select.appendChild(option);
+    }
+    console.log(select);
+    return select;
+}
+
+function createSelectIdElecciones(jsonElecciones, nombreSelect) {
+    const select = document.createElement('select');
+    select.name = `select-opciones-${nombreSelect}`;
+
+    // Opción por defecto
+    const defaultOption = document.createElement('option');
+    defaultOption.value = "";
+    defaultOption.textContent = `Selecciona ${nombreSelect}`;
+    defaultOption.selected = true;
+    defaultOption.disabled = true;
+    select.appendChild(defaultOption);
+
+    jsonElecciones.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item;
+        option.textContent = item;
+        select.append(option);
+    });
+
+    return select;
+}
+
+function createSelectLocalidad(localidades, nombreSelect) {
+    const select = document.createElement('select');
+    select.name = `select-opciones-${nombreSelect}`;
+
+    // Opción por defecto
+    const defaultOption = document.createElement('option');
+    defaultOption.value = "";
+    defaultOption.textContent = `Selecciona ${nombreSelect}`;
+    defaultOption.selected = true;
+    defaultOption.disabled = true;
+    select.appendChild(defaultOption);
+    console.log(localidades.localidades);
+    localidades.localidades.forEach(localidad => {
+        const option = document.createElement('option');
+        option.value = localidad;
+        option.textContent = localidad;
+        select.appendChild(option);
+    });
+
+    return select;
+}
+
+async function createFormInsertPartido() {
+    const form = document.createElement('form');
+    form.id = 'modal-form-insert';
+    form.enctype = 'multipart/form-data';
+
+    const inputNombrePartido = document.createElement('input');
+    inputNombrePartido.name = 'input-nombre-partido';
+    inputNombrePartido.type = 'text';
+    inputNombrePartido.required = true;
+    inputNombrePartido.placeholder = 'Inserta el nombre del partido';
+
+    const inputSiglasPartido = document.createElement('input');
+    inputSiglasPartido.name = 'input-siglas-partido';
+    inputSiglasPartido.type = 'text';
+    inputSiglasPartido.required = true;
+    inputSiglasPartido.placeholder = 'Inserta las siglas del partido';
+
+    // Campo para la imagen
+    const inputImagenPartido = document.createElement('input');
+    inputImagenPartido.name = 'input-imagen-partido';
+    inputImagenPartido.type = 'file';
+    inputImagenPartido.accept = 'image/*'; // Acepta solo imágenes
+
+    const submitButton = createSubmitButton();
+
+    form.appendChild(inputNombrePartido);
+    form.appendChild(inputSiglasPartido);
+    form.appendChild(inputImagenPartido);
+    form.appendChild(submitButton);
+
+    form.addEventListener('submit', async (event) => {
+        const formData = new FormData(form);
+        console.log(formData.getAll);
+        await insertarPartido(formData);
+        await generarContenidoEleccionPartidos();
+    });
+
+    return form;
+}
+
+
+async function createFormUpdatePartidos() {
+    const form = document.createElement('form');
+    form.id = 'modal-form-update';
+
+    const idPartidoInput = document.createElement('input');
+    idPartidoInput.type = 'text';
+    idPartidoInput.name = 'idPartido';
+    idPartidoInput.placeholder = 'ID Partido';
+    idPartidoInput.disabled = true;
+
+
+    const inputIdElecciones = createInput('text', 'inputIdPartido', 'ID Partido');
+    inputIdElecciones.readOnly = true;
+
+    const inputNombre = createInput('text', 'inputNombre', 'Nombre del partido');
+
+    const inputSiglas = createInput('text', 'inputSiglas', 'Siglas del partido');
+
+    const inputImagen = createInput('file', 'inputImagen', 'Imagen del partido')
+
+    const preferenciaSelect = document.createElement('select');
+    preferenciaSelect.name = 'preferencia';
+    ['1', '2', '3'].forEach(value => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        preferenciaSelect.appendChild(option);
+    });
+
+    const submitButton = createSubmitButton();
+    form.appendChild(inputIdElecciones);
+    form.appendChild(inputNombre);
+    form.appendChild(inputSiglas);
+    form.appendChild(inputImagen);
+    form.appendChild(submitButton);
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(form); // Enviar como FormData
+        formData.append('idPartido', document.querySelector('[name="inputIdPartido"]').value);
+        formData.append('nombre', document.querySelector('[name="inputNombre"]').value);
+        formData.append('siglas', document.querySelector('[name="inputSiglas"]').value);
+        formData.append('imagen', document.querySelector('[name="inputImagen"]').files[0]); // Archivo de imagen
+
+        await updatePartido(formData);
+        await generarContenidoEleccionPartidos()
+    });
+
+
+    return form;
+}
+
+
+function createHeader() {
+    const h1 = document.createElement('h1');
+    h1.textContent = 'PANEL PARTIDOS';
+    return h1;
+}
+
+function createInsertButton() {
     const btnInsertar = document.createElement('button');
     btnInsertar.id = 'btn-insertar';
     btnInsertar.textContent = 'Insertar Candidato';

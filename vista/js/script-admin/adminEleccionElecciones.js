@@ -1,415 +1,307 @@
-import { getDnisCenso, getElecciones, insertarEleccion, insertarPartido } from "./apiAdmin.js";
-import { getIdElecciones } from "./apiAdmin.js";
-import { getLocalidades } from "./apiAdmin.js";
-import { createInput, createSubmitButton } from "./generarContenidoSinEleccion.js";
-import { createCloseButton } from "./generarContenidoSinEleccion.js";
-import { getCandidatosNombre } from "./apiAdmin.js";
-import { insertarCandidato } from "./apiAdmin.js";
-import { getNombrePartidos } from "./apiAdmin.js";
+import { getDnisCenso, getIdElecciones, getLocalidades, getDatosCenso, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato, getNombrePartidoConId, getElecciones, insertarEleccion, updateEleccionFormUpdate, deleteEleccion, updateEleccion } from "./apiAdmin.js";
+import { createSubmitButton, createCloseButton, createDeleteButton, createLabeledField } from "./generarContenidoSinEleccion.js";
 import { getPartidos } from "./apiAdmin.js";
-import { createLabeledField } from "./generarContenidoSinEleccion.js";
-import { updateEleccionFormUpdate } from "./apiAdmin.js";
+import { createHeader } from "../main-content/utilidades.js";
+
+/* 
+    FALTA POR HACER LA FUNCION DE DELETE ELECCION, 
+    Y CREO QUE ACTUALIZAR TAMBIÉN, ASI QUE CUANDO TOQUES ESTO,
+    ASEGURATE DE CREARLAS TAMBIÉN.
+*/
 
 export async function generarContenidoEleccionElecciones() {
+    
     const main = document.querySelector('main');
-    main.innerHTML = '';
-    console.log('Ha entrado en adminEleccionPartidos.js');
-    const modalInsert = await createModalInsert();
-    const modalUpdate = await createModalUpdate();
-    const h1 = createHeader();
-    const btnInsertar = createInsertButton();
-    const divTabla = await createTableDiv();
+    
+    main.innerHTML = `
 
-    main.appendChild(modalInsert);
-    main.appendChild(modalUpdate);
-    main.appendChild(h1);
+        <div id="modalPadreInsert"></div>
+        <h1>PANEL ELECCIONES</h1>
+        <div class="gridTable">
+
+            <div class="gridTitleHeader">
+
+                <h2>idEleccion</h2>
+                <h2>Tipo</h2>
+                <h2>Estado</h2>
+                <h2>Fecha de Inicio</h2>
+                <h2>Fecha de Fin</h2>
+
+            </div>
+
+            <div class="gridTableBody" id="gridTableBody">
+
+                <!-- Aquí se generará la tabla -->
+            
+            </div>
+        
+        </div>
+
+    
+    `;
+
+    const contenidoModal = `
+
+        <button type="submit" class="btn-close" id="cerrar">Cerrar</button>
+
+        <form class="formularioModal">
+        
+            <div class="flexModalSection">
+            
+                <div>
+                    <label for="select-opciones-estado">Estado:</label>
+                    <select name="select-opciones-estado" id="select-opciones-estado"></select>
+                </div>
+
+                <div>
+                    <label for="select-opciones-tipo">Tipo:</label>
+                    <select name="select-opciones-tipo" id="select-opciones-tipo"></select>
+                </div>
+            
+            </div>
+
+            <div class="flexModalSection">
+            
+                <div>
+                    <label for="select-opciones-fechainicio">Fecha de Inicio:</label>
+                    <input type="date" name="select-opciones-fechainicio" id="select-opciones-fechainicio" />
+                </div>
+
+                <div>
+                    <label for="select-opciones-fechafin">Fecha de Fin:</label>
+                    <input type="date" name="select-opciones-fechafin" id="select-opciones-fechafin" />
+                </div>
+            
+            </div>
+
+            <div class="buttonModalSection">
+
+                <button type="submit" class="btn-submit" id="insertar">Insertar</button>
+                <button type="submit" class="btn-delete" id="borrar">Borrar</button>
+                <button type="submit" class="btn-update" id="actualizar">Actualizar</button>
+
+            </div>
+        
+        </form>
+
+    `;
+
+    let modalPadre = document.getElementById('modalPadreInsert');
+    modalPadre.style.display = 'none';
+    modalPadre.innerHTML = contenidoModal;
+
+    const gridTableBody = document.getElementById('gridTableBody');
+    const borrarBtn = document.getElementById('borrar');
+    const actualizarBtn = document.getElementById('actualizar');
+    const cerrarBtn = document.getElementById('cerrar');
+    const insertar = document.getElementById('insertar');
+    const btnInsertar = await createInsertButton(borrarBtn, actualizarBtn, insertar); 
+
+
+    createGridTable(gridTableBody)
+    cerrarBtn.addEventListener("click", () => handleCerrarBtn(modalPadre))
+
     main.appendChild(btnInsertar);
-    main.appendChild(divTabla);
-
     document.body.appendChild(main);
 }
 
-async function createModalInsert() {
-    const modalPadre = document.createElement('div');
-    modalPadre.id = 'modalPadreInsert';
-    modalPadre.style.display = 'none';
-    const contenidoModal = document.createElement('div');
-    contenidoModal.className = 'contenidoModal';
 
-    const form = await createFormInsertElecciones();
-    console.log('FORMULARIO:');
-    console.log(form);
-
-
-    const closeButton = createCloseButton(modalPadre);
-    contenidoModal.appendChild(closeButton);
-    contenidoModal.appendChild(form);
-
-    modalPadre.appendChild(contenidoModal);
-
-    return modalPadre;
-}
-
-function createSelectDnis(jsonDni, nombreSelect) {
-    console.log(jsonDni);
-    console.log(typeof jsonDni);
-
-    const select = document.createElement('select');
-    select.name = `select-opciones-${nombreSelect}`;
-
-    // Opción por defecto
-    const defaultOption = document.createElement('option');
-    defaultOption.value = ""; // Valor null en HTML se representa con una cadena vacía
-    defaultOption.textContent = `Selecciona ${nombreSelect}`;
-    defaultOption.selected = true;
-    defaultOption.disabled = true;
-    select.appendChild(defaultOption);
-
-    for (let i = 0; i < jsonDni.length; i++) {
-        console.log(jsonDni[i].dni);
-        const option = document.createElement('option');
-        option.value = jsonDni[i].dni;
-        option.textContent = jsonDni[i].dni;
-        select.appendChild(option);
-    }
-    console.log(select);
-    return select;
-}
-
-function createSelectIdElecciones(jsonElecciones, nombreSelect) {
-    const select = document.createElement('select');
-    select.name = `select-opciones-${nombreSelect}`;
-
-    // Opción por defecto
-    const defaultOption = document.createElement('option');
-    defaultOption.value = "";
-    defaultOption.textContent = `Selecciona ${nombreSelect}`;
-    defaultOption.selected = true;
-    defaultOption.disabled = true;
-    select.appendChild(defaultOption);
-
-    jsonElecciones.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item;
-        option.textContent = item;
-        select.append(option);
-    });
-
-    return select;
-}
-
-function createSelectLocalidad(localidades, nombreSelect) {
-    const select = document.createElement('select');
-    select.name = `select-opciones-${nombreSelect}`;
-
-    // Opción por defecto
-    const defaultOption = document.createElement('option');
-    defaultOption.value = "";
-    defaultOption.textContent = `Selecciona ${nombreSelect}`;
-    defaultOption.selected = true;
-    defaultOption.disabled = true;
-    select.appendChild(defaultOption);
-
-    localidades.forEach(localidad => {
-        const option = document.createElement('option');
-        option.value = localidad;
-        option.textContent = localidad;
-        select.appendChild(option);
-    });
-
-    return select;
-}
-
-function createSelectPreferencia() {
-
-    const select = document.createElement('select');
-    select.name = 'select-opciones-preferencia';
-
-    const optionNull = document.createElement('option');
-    optionNull.name = null;
-    optionNull.textContent = 'Selecciona la preferencia';
-
-    select.appendChild(optionNull);
-
-    const preferencias = ["1", "2", "3"];
-
-    preferencias.forEach(preferencia => {
-        const option = document.createElement('option');
-        option.id = `preferencia-${preferencia}`;
-        option.name = `preferencia-${preferencia}`;
-        option.textContent = preferencia;
-        select.appendChild(option);
-    });
-
-    return select;
-
-
-}
-
-async function createFormInsertElecciones() {
-    const form = document.createElement('form');
-    form.id = 'modal-form-insert';
-
-    const selectTipo = createSelectTipos();
-    selectTipo.required = true;
-    
-
-    const inputFechaInicio = document.createElement('input');
-    inputFechaInicio.type = 'date';
-    inputFechaInicio.name = 'inputFechaInicio';
-    inputFechaInicio.required = true;
-
-    const inputFechaFin = document.createElement('input');
-    inputFechaFin.type = 'date';
-    inputFechaFin.name = 'inputFechaFin';
-    inputFechaFin.required = true;
-
-    const submitButtonCandidatos = createSubmitButton();
-
-    form.appendChild(selectTipo);
-    form.appendChild(inputFechaInicio);
-    form.appendChild(inputFechaFin);
-    form.appendChild(submitButtonCandidatos);
-
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(form);
-        const tipo = formData.get('select-opciones-tipos');
-        const estado = formData.get('select-opciones-estado');
-        const fechaInicio = formData.get('inputFechaInicio');
-        const fechaFin = formData.get('inputFechaFin');
-
-        if(fechaInicio > fechaFin) {
-            alert('La fecha de inicio no puede ser mayor a la fecha de fin');
-            return;
-        }
-
-
-        await insertarEleccion(tipo, estado, fechaInicio, fechaFin);
-        await generarContenidoEleccionElecciones();
-    });
-
-    return form;
-}
-/*
-                idEleccion: eleccion.idEleccion,
-                tipo: eleccion.tipo,
-                estado: eleccion.estado,
-                idEleccion: eleccion.fechaInicio,
-                preferencia: eleccion.fechaFin
-*/
-async function fillUpdateForm(datosFila) {
-    const formUpdate = document.getElementById('modal-form-update');
-    formUpdate.querySelector('[name="idEleccion"]').value = datosFila.idEleccion;
-    formUpdate.querySelector('[name="select-opciones-tipos"]').value = datosFila.tipo;
-    console.log(formUpdate.querySelector('[name="select-opciones-tipos"]').value);
-    formUpdate.querySelector('[name="inputFechaInicio"]').value = datosFila.fechaInicio;
-    formUpdate.querySelector('[name="inputFechaFin"]').value = datosFila.fechaFin;
-}
-
-
-async function createFormUpdatePartidos() {
-    const form = document.createElement('form');
-    form.id = 'modal-form-update';
-
-    const inputIdEleccion = document.createElement('input');
-    inputIdEleccion.type = 'text';
-    inputIdEleccion.name = 'idEleccion';
-    inputIdEleccion.placeholder = 'ID Eleccion';
-    inputIdEleccion.readOnly = true;
-
-    const selectTipo = createSelectTipos();
-    const inputFechaInicio = createInput('date', 'inputFechaInicio');
-    const inputFechaFin = createInput('date', 'inputFechaFin');
-
-    form.appendChild(createLabeledField('ID Elecciones:', inputIdEleccion));
-    form.appendChild(createLabeledField('Tipo:', selectTipo));
-    form.appendChild(createLabeledField('Fecha Inicio:', inputFechaInicio));
-    form.appendChild(createLabeledField('Fecha Fin:', inputFechaFin));
-
-    const submitButton = createSubmitButton();
-    form.appendChild(submitButton);
-
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(form);
-        const idEleccion = formData.get('idEleccion');
-        const tipo = formData.get('select-opciones-tipos');
-        const estado = formData.get('select-opciones-estado');
-        const fechaInicio = formData.get('inputFechaInicio');
-        const fechaFin = formData.get('inputFechaFin');
-
-        if(fechaInicio > fechaFin) {
-            alert('Le fecha de inicio debe de ser menor que la fecha de fin');
-            return;
-        }
-
-        const atributos = {
-            idEleccion: idEleccion,
-            tipo: tipo,
-            estado: estado,
-            fechaInicio: fechaInicio,
-            fechaFin: fechaFin
-        };
-
-        console.log(atributos);
-
-        await updateEleccionFormUpdate(atributos);
-        await generarContenidoEleccionElecciones();
-    });
-
-    return form;
-}
-
-
-
-function createHeader() {
-    const h1 = document.createElement('h1');
-    h1.textContent = `PANEL ELECCIONES`;
-    return h1;
-}
-
-function createInsertButton() {
+// AQUI SE CREA EL INSERT BUTTON DONDE CARGA INFORMACIÖN DENTRO DE LOS SELECTS
+async function createInsertButton(borrarBtn, actualizarBtn, insertar) {
     const btnInsertar = document.createElement('button');
     btnInsertar.id = 'btn-insertar';
-    btnInsertar.textContent = 'INSERTAR';
-    btnInsertar.addEventListener('click', () => {
+    btnInsertar.textContent = 'Insertar Eleccion';
+    
+    btnInsertar.addEventListener('click', async (event) => {
+
+        let tipoEleccion = document.getElementById('select-opciones-tipo');
+        let fechaInicioEleccion = document.getElementById('select-opciones-fechainicio');
+        let fechaFinEleccion = document.getElementById('select-opciones-fechafin');
+        let estadoEleccion = document.getElementById('select-opciones-estado');
+
+        tipoEleccion.value = null;
+        fechaInicioEleccion.value = null;
+        fechaFinEleccion.value = null;
+        estadoEleccion.value = null;
+        
+        event.preventDefault();
+
         const divPadre = document.getElementById('modalPadreInsert');
-        divPadre.style.display = 'block';
+        divPadre.style.display = 'flex';
+        insertar.style.display = 'block';
+        borrarBtn.style.display = "none";
+        actualizarBtn.style.display = "none";
+
+        // RELLENANDO LOS CAMPOS DEL FORMULARIO
+        await cargarSelects()
+
+        insertar.addEventListener('click', async (event) => {
+
+            // Prevent the default form submission
+            event.preventDefault();
+
+            // OBTENER LOS VALORES DE LOS SELECTS
+            tipoEleccion = tipoEleccion.value;
+            fechaInicioEleccion = fechaInicioEleccion.value;
+            fechaFinEleccion = fechaFinEleccion.value;
+            estadoEleccion = estadoEleccion.value;
+
+            console.log(tipoEleccion);
+            console.log(fechaInicioEleccion);
+            console.log(fechaFinEleccion);
+            console.log(estadoEleccion);
+
+            let insertarEleccionABBDD = await insertarEleccion(tipoEleccion, estadoEleccion, fechaInicioEleccion, fechaFinEleccion)
+                .then(data => {
+                    if(data.success){
+                        location.reload();
+                        return data;
+                        
+                    }
+                    return data;
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+        })
+
+
     });
+
     return btnInsertar;
 }
 
-async function createTableDiv(eleccion) {
-    const divTabla = document.createElement('div');
-    divTabla.id = 'div-tabla-elecciones';
+// RELLENANDO LOS CAMPOS DE LOS FORMULARIOS
+async function cargarSelects(){
+    
+    // AQUÍ EMPIEZA EL CÓDIGO PARA CARGAR LOS DATOS PARA EL MODAL
+    function createEstadoSelect(){
 
-    const table = document.createElement('table');
-    table.id = 'tabla-elecciones';
+        let estados = ["abierta", "cerrada", "finalizada"]
+        let selectEstado = document.getElementById('select-opciones-estado');
+        selectEstado.innerHTML = "";
 
-    const thead = createTableHeader(eleccion);
-    const tbody = await createTableBody(eleccion);
+        estados.forEach(estado => {
+            let option = document.createElement('option');
+            option.value = estado;
+            option.textContent = estado;
+            selectEstado.appendChild(option);
+        })
+    }
 
+    function createTipoSelect(){
 
-    table.appendChild(thead);
-    table.appendChild(tbody);
-    divTabla.appendChild(table);
+        let tipos = ["general", "autonomica"]
+        let selectEstado = document.getElementById('select-opciones-tipo');
+        selectEstado.innerHTML = "";
 
-    return divTabla;
+        tipos.forEach(tipo => {
+            let option = document.createElement('option');
+            option.value = tipo;
+            option.textContent = tipo;
+            selectEstado.appendChild(option);
+        })
+
+    }
+
+    createEstadoSelect();
+    createTipoSelect();
 }
 
-function createTableHeader() {
-    const thead = document.createElement('thead');
-    thead.id = 'theadCandidatos';
-    const tr = document.createElement('tr');
+async function createGridTable(gridTable){
 
-    ['idEleccion', 'tipo', 'estado', 'fechaInicio', 'fechaFin'].forEach(text => {
-        const th = document.createElement('th');
-        th.textContent = text;
-        tr.appendChild(th);
-    });
+    gridTable.innerHTML = '';
 
-    thead.appendChild(tr); // Agregar la fila al thead
-    console.log(thead);
-    return thead;
+    let elecciones = await getElecciones();
+    let modalPadre = document.getElementById('modalPadreInsert');
+    const borrarBtn = document.getElementById('borrar');
+    const actualizarBtn = document.getElementById('actualizar');
+    const btnInsertar = document.getElementById('insertar');
+
+    elecciones.forEach(async eleccion => {
+        
+        let idEleccion = eleccion.idEleccion;
+        let tipoEleccion = eleccion.tipo;
+        let estadoEleccion = eleccion.estado;
+        let fechaInicioEleccion = eleccion.fechaInicio;
+        let fechaFinEleccion = eleccion.fechaFin;
+
+        const gridRow = document.createElement("div");
+        let gridRowHTML = `
+
+            <p>${idEleccion}</p>
+            <p>${tipoEleccion}</p>
+            <p>${estadoEleccion}</p>
+            <p>${fechaInicioEleccion}</p>
+            <p>${fechaFinEleccion}</p>
+        
+        `
+
+        // ESTO ES CUANDO HACES CLIC ENCIMA DE UN CANDIDATO
+        gridRow.addEventListener("click", async () => {
+            
+            modalPadre.style.display = 'flex';
+            actualizarBtn.style.display = 'block';
+            borrarBtn.style.display = 'block';
+            btnInsertar.style.display = 'none';
+
+            cargarSelects();
+
+            // OBTENER LOS VALORES DE LOS SELECTS
+            const tipoEleccionSelect = document.getElementById('select-opciones-tipo');
+            const fechaInicioEleccionSelect = document.getElementById('select-opciones-fechainicio');
+            const fechaFinEleccionSelect = document.getElementById('select-opciones-fechafin');
+            const estadoEleccionSelect = document.getElementById('select-opciones-estado');
+            
+
+            tipoEleccionSelect.value = tipoEleccion;
+            fechaInicioEleccionSelect.value = fechaInicioEleccion;
+            fechaFinEleccionSelect.value = fechaFinEleccion;
+            estadoEleccionSelect.value = estadoEleccion;
+
+            // GESTION DEL BORRARDO Y ACTUALIZACION
+            borrarBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+                // POR HACER LA FUNCION DE DELETE ELECCION
+                let borrado = await deleteEleccion(idEleccion);
+                modalPadre.style.display = 'none';
+                setTimeout(() => {
+                    createGridTable(gridTable);
+                }, 250);
+            })
+
+            actualizarBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+            
+                let formData = new FormData();
+                formData.append("idEleccion", idEleccion);
+                formData.append("tipoEleccion", tipoEleccionSelect.value);
+                formData.append("estadoEleccion", estadoEleccionSelect.value);
+                formData.append("fechaInicioEleccion", fechaInicioEleccionSelect.value);
+                formData.append("fechaFinEleccion", fechaFinEleccionSelect.value);
+            
+                let actualizarEleccion = await updateEleccion(formData)
+                    .then(data => {
+                        return data;
+                    })
+
+                if(actualizarEleccion.exito){
+                    location.reload();
+                }
+
+            });
+            
+        
+        })
+
+        gridRow.innerHTML = gridRowHTML;
+        gridTable.appendChild(gridRow);
+        
+
+    })
+
 }
 
-
-async function createTableBody() {
-    const tbody = document.createElement('tbody');
-    const eleccionesJSON = await getElecciones();
-    console.log(eleccionesJSON);
-
-    eleccionesJSON.forEach(eleccion => {
-        const tr = document.createElement('tr');
-
-        const tdIdEleccion = document.createElement('td');
-        tdIdEleccion.textContent = eleccion.idEleccion;
-
-        const tdTipo = document.createElement('td');
-        tdTipo.textContent = eleccion.tipo;
-
-        const tdEstado = document.createElement('td');
-        tdEstado.textContent = eleccion.estado;
-
-        const tdFechaInicio = document.createElement('td');
-        tdFechaInicio.textContent = eleccion.fechaInicio;
-
-        const tdFechaFin = document.createElement('td');
-        tdFechaFin.textContent = eleccion.fechaFin;
-
-        tr.appendChild(tdIdEleccion);
-        tr.appendChild(tdTipo);
-        tr.appendChild(tdEstado);
-        tr.appendChild(tdFechaInicio);
-        tr.appendChild(tdFechaFin);
-
-        tr.addEventListener('click', async () => {
-            console.log('has hecho click en la fila');
-            const modalUpdate = document.getElementById('modalPadreUpdate');
-            modalUpdate.style.display = 'block';
-
-            const datosFila = {
-                idEleccion: eleccion.idEleccion,
-                tipo: eleccion.tipo.toUpperCase(),
-                fechaInicio: eleccion.fechaInicio,
-                fechaFin: eleccion.fechaFin
-            };
-            console.log(datosFila);
-            await fillUpdateForm(datosFila);
-        });
-
-        tbody.appendChild(tr);
-    });
-
-    return tbody;
-}
-
-async function createModalUpdate() {
-    const modalPadre = document.createElement('div');
-    modalPadre.id = 'modalPadreUpdate';
-    modalPadre.style.display = 'none';
-
-    const contenidoModal = document.createElement('div');
-    contenidoModal.className = 'contenidoModal';
-
-    const form = await createFormUpdatePartidos();
-    const closeButton = createCloseButton(modalPadre);
-
-    contenidoModal.appendChild(closeButton);
-    contenidoModal.appendChild(form);
-    modalPadre.appendChild(contenidoModal);
-
-    return modalPadre;
-}
-
-function createSelectTipos() {
-    const tipos = ['autonomica', 'general'];
-    const select = document.createElement('select');
-    select.name = 'select-opciones-tipos';
-    tipos.forEach(tipo => {
-        const option = document.createElement('option');
-        option.name = `option-${tipo}`;
-        option.textContent = tipo.toUpperCase();  // Corrección aquí
-
-        select.appendChild(option);
-    });
-
-    return select;
-}
-
-
-function createSelectEstado() {
-    const estados = ['abierta', 'cerrada', 'finalizada'];
-    const select = document.createElement('select');
-    select.name = 'select-opciones-estado';
-    estados.forEach(estado => {
-        const option = document.createElement('option');
-        option.name = `option-${estado}`;
-        option.textContent = estado.toUpperCase();
-
-        select.appendChild(option);
-    });
-
-    return select;
+function handleCerrarBtn(modal){
+    modal.style.display = 'none';
 }
