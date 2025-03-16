@@ -279,8 +279,14 @@ async function createGridTable(gridTable){
                 formData.append("estadoEleccion", estadoEleccionSelect.value);
                 formData.append("fechaInicioEleccion", fechaInicioEleccionSelect.value);
                 formData.append("fechaFinEleccion", fechaFinEleccionSelect.value);
-            
-                let actualizarEleccion = await updateEleccion(formData)
+                
+                const tipoEleccion = tipoEleccionSelect.value;
+                const estadoEleccion = tipoEleccionSelect.value;
+                const fechaInicioEleccion = fechaInicioEleccionSelect.value;
+                const fechaFinEleccion = fechaFinEleccionSelect.value;
+
+
+                let actualizarEleccion = await updateEleccion(idEleccion, tipoEleccion, estadoEleccion, fechaInicioEleccion, fechaFinEleccion,)
                     .then(data => {
                         return data;
                     })

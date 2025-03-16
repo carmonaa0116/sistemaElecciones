@@ -1,4 +1,4 @@
-import { getDnisCenso, getIdElecciones, getLocalidades, getDatosCenso, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato, getNombrePartidoConId } from "./apiAdmin.js";
+import { getDnisCenso, getIdElecciones, getLocalidades, getDatosCenso, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato, getNombrePartidoConId, updatePartido, deletePartido, insertarPartido } from "./apiAdmin.js";
 import { createSubmitButton, createCloseButton, createDeleteButton, createLabeledField } from "./generarContenidoSinEleccion.js";
 import { getPartidos } from "./apiAdmin.js";
 import { createHeader } from "../main-content/utilidades.js";
@@ -270,18 +270,13 @@ async function createFormUpdatePartidos() {
 }
 
 
-function createHeader() {
-    const h1 = document.createElement('h1');
-    h1.textContent = 'PANEL PARTIDOS';
-    return h1;
-}
 
-function createInsertButton() {
+function createInsertButton(borrarBtn, actualizarBtn, insertar) {
     const btnInsertar = document.createElement('button');
     btnInsertar.id = 'btn-insertar';
-    btnInsertar.textContent = 'Insertar Candidato';
+    btnInsertar.textContent = 'Insertar Partido';
 
-    btnInsertar.addEventListener('click', async (event) => {
+    btnInsertar.addEventListener('click', (event) => {
 
         event.preventDefault();
 
@@ -299,14 +294,13 @@ function createInsertButton() {
             event.preventDefault();
 
             // OBTENER LOS VALORES DE LOS SELECTS
-            const dni = document.getElementById('select-opciones-dni').value;
-            const localidad = document.getElementById('select-opciones-localidad').value;
-            const idElecciones = document.getElementById('select-opciones-idElecciones').value;
-            const preferencia = document.getElementById('select-opciones-preferencia').value;
-            const partido = document.getElementById('select-opciones-partidos').value;
-
-            let insertandoCandidato = await insertarCandidato(dni, localidad, idElecciones, preferencia, partido);
+            let nombre = document.getElementById('input-nombre').value;
+            let siglas = document.getElementById('input-siglas').value;
+            let imagen = document.getElementById('input-imagen-partido').files[0]; // Archivo de imagen
+            console.log(imagen);
+            let insertandoCandidato = await insertarPartido(nombre, siglas, imagen);
             console.log(insertandoCandidato);
+            window.location.reload();
         })
 
 
@@ -356,22 +350,36 @@ async function createGridTable(gridTable) {
             inputNombre.value = partido.nombre;
             inputSiglas.value = partido.siglas;
 
+
+            // GESTION DEL BORRARDO Y ACTUALIZACION
+            borrarBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+
+                if (confirm("¿Estás seguro de que deseas eliminar este partido?")) {
+                    await deletePartido(partido.idPartido);
+                    createGridTable(gridTable);
+                    window.location.reload();
+                } else {
+                    window.location.reload();
+                }
+            });
+
+
+            actualizarBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+
+                let idPartido = partido.idPartido;
+                let nombre = document.getElementById('input-nombre').value;
+                let siglas = document.getElementById('input-siglas').value;
+                let imagen = document.getElementById('input-imagen-partido').value;
+
+                await updatePartido(idPartido, nombre, siglas, imagen);
+                location.reload();
+            })
         })
 
 
-        // GESTION DEL BORRARDO Y ACTUALIZACION
-        borrarBtn.addEventListener('click', async (event) => {
-            event.preventDefault();
-            let borrado = await deleteCandidato(candidato.idCandidato);
-            console.log(borrado);
-            createGridTable(gridTable);
-        })
 
-        actualizarBtn.addEventListener('click', async (event) => {
-            event.preventDefault();
-            await updateCandidato(candidato.idCandidato, candidato.idCenso, candidato.idPartido, candidato.idLocalidad, candidato.preferencia, candidato.idEleccion);
-            location.reload();
-        })
 
         gridRow.innerHTML = gridRowHTML;
         gridTable.appendChild(gridRow);

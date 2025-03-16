@@ -1,208 +1,239 @@
-import { crearBotonCerrarSesion } from "../main-content/utilidades.js";
-import { getPartidos, getDatosCensoUsuario, getElecciones, getDatosUsuario, votar } from "./apiVotante.js";
-
-document.addEventListener('DOMContentLoaded', () => {
-    mostrarContenido();
-});
-
-// 🔹 Función para obtener las elecciones en las que el usuario NO ha votado
-async function obtenerEleccionesNoVotadas() {
-    try {
-        // 1️⃣ Obtener los datos del usuario desde las cookies
-        const usuario = await getDatosUsuario();
-        console.log(usuario.eleccionesVotadas);
-        const todasLasElecciones = await getElecciones();
-        console.log(todasLasElecciones.eleccion);
-
-        // 2️⃣ Filtrar las elecciones no votadas
-        const eleccionesNoVotadas = todasLasElecciones.eleccion.filter(eleccion => 
-            !usuario.eleccionesVotadas.includes(parseInt(eleccion.idEleccion))
-        );
-
-        console.log("Elecciones en las que el usuario NO ha votado (sin duplicados):", eleccionesNoVotadas);
-        return eleccionesNoVotadas;
-    } catch (error) {
-        console.error("Error al obtener elecciones no votadas:", error);
-        return [];
-    }
-}
-
-async function mostrarContenido() {
+import { getCandidatosPartido, getDatosCensoUsuario, getDatosUsuario, getEleccionesUsuario, getPartidos, getPartidosLocalidad, getPartidosLocalidadEleccion, votarAutonomica, votarGeneral } from "./apiVotante.js";
+const datosUsuario = await getDatosUsuario();
+const datosCensoUsuario = await getDatosCensoUsuario(datosUsuario.idCenso);
+async function mostrarContenidoVotacion() {
     const main = document.querySelector('main');
-    main.innerHTML = ""; // Limpiar contenido previo
 
-    const botonCerrarSesion = crearBotonCerrarSesion();
+    main.innerHTML = `
+        <div id="modalPadreInsert"></div>
+        <h1>PANEL DE VOTACION</h1>
+        <div class="elecciones-container">
+            <h2>ELECCIONES GENERALES</h2>
+            <div id="elecciones-container-generales" class="elections-container"></div>
+            <h2>ELECCIONES AUTONOMICAS</h2>
+            <div id="elecciones-container-autonomicas" class="elections-container"></div>
+        </div>
+    `;
 
-    const header = createHeader();
-    const h1 = document.createElement('h1');
-    h1.textContent = "PANEL DE VOTACIÓN";
+    let modalPadre = document.getElementById('modalPadreInsert');
 
-    const divContenido = document.createElement('div');
-    divContenido.className = 'divContenido';
-
-    const divEleccionesGenerales = document.createElement('div');
-    divEleccionesGenerales.id = 'divEleccionesGenerales';
-
-    const divEleccionesAutonomicas = document.createElement('div');
-    divEleccionesAutonomicas.id = 'divEleccionesAutonomicas';
-
-    divContenido.appendChild(divEleccionesGenerales);
-    divContenido.appendChild(divEleccionesAutonomicas);
-
-    main.appendChild(botonCerrarSesion);
-    main.appendChild(header);
-    main.appendChild(h1);
-    main.appendChild(divContenido);
-
-    // Obtener y mostrar elecciones en las que el usuario NO ha votado
-    const eleccionesNoVotadas = await obtenerEleccionesNoVotadas();
-    console.log(eleccionesNoVotadas);
-    if (eleccionesNoVotadas.length === 0) {
-        divContenido.innerHTML = "<p>Has votado en todas las elecciones abiertas.</p>";
+    if (!modalPadre) {
+        console.error("No se encontró modalPadreInsert en el DOM");
         return;
     }
 
-    eleccionesNoVotadas.forEach(eleccion => {
-        if (eleccion.tipo === "general") {
-            fillEleccion(divEleccionesGenerales, eleccion);
-        } else if (eleccion.tipo === "autonomica") {
-            fillEleccion(divEleccionesAutonomicas, eleccion);
-        }
-    });
-}
+    modalPadre.style.display = 'none';
 
-// 🔹 Función para crear el encabezado con el logo
-function createHeader() {
-    const header = document.createElement('header');
-    header.className = 'logoCivio';
-
-    const a = document.createElement('a');
-    a.href = '../main.php';
-
-    const img = document.createElement('img');
-    img.src = '../../img/logoCivio.png';
-
-    a.appendChild(img);
-    header.appendChild(a);
-    return header;
-}
-
-// 🔹 Función para llenar los divs de elecciones
-function fillEleccion(div, eleccion) {
-    const eleccionDiv = document.createElement('div');
-    eleccionDiv.className = 'eleccion';
-    eleccionDiv.innerHTML = `
-        <p><strong>Elección ${eleccion.tipo} nº:</strong> ${eleccion.idEleccion}</p>
-        <p><strong>Estado:</strong> ${eleccion.estado}</p>
-        <p><strong>Fecha Inicio:</strong> ${eleccion.fechaInicio}</p>
-        <p><strong>Fecha Fin:</strong> ${eleccion.fechaFin}</p>
+    modalPadre.innerHTML = `
+        <button type="submit" class="btn-close" id="cerrar">Cerrar</button>
+        <div class="formularioModal">
+            <h1>¿QUÉ QUIERES HACER CON LA ELECCIÓN?</h1>
+            <div class="flexModalSection">
+                <button id="btn-abrir">Abrir</button>
+                <button id="btn-cerrar">Cerrar</button>
+                <button id="btn-terminar">Terminar</button>
+            </div>
+        </div>
     `;
 
-    eleccionDiv.addEventListener('click', () => mostrarPartidos(eleccion));
-    div.appendChild(eleccionDiv);
+    await fillElecciones();
 }
 
-// 🔹 Función para mostrar los partidos de una elección
-async function mostrarPartidos(eleccion) {
-    console.log("Elección seleccionada:", eleccion);
-
-    const main = document.querySelector('main');
-    main.innerHTML = ''; // Limpiar contenido
-
-    const h1 = document.createElement('h1');
-    h1.textContent = `Partidos de la Elección Nº ${eleccion.idEleccion}`;
-    main.appendChild(h1);
-
-    const divPartidos = document.createElement('div');
-    divPartidos.id = 'divPartidos';
-
+async function fillElecciones() {
     try {
-        const partidos = await getPartidos(eleccion.idEleccion);
-        if (partidos.partidos.length > 0) {
-            partidos.partidos.forEach(partido => {
-                const partidoDiv = document.createElement('div');
-                partidoDiv.className = 'partido';
 
-                const nombrePartido = document.createElement('p');
-                nombrePartido.textContent = partido.nombre;
-
-                const imagenPartido = document.createElement('img');
-                imagenPartido.src = "data:image/png;base64," + partido.imagen;
-
-                partidoDiv.appendChild(nombrePartido);
-                partidoDiv.appendChild(imagenPartido);
-                divPartidos.appendChild(partidoDiv);
-
-                partidoDiv.addEventListener('click', async () => {
-                    console.log(partido);
-                    await mostrarModal(partido, partido.idPartido, eleccion.idEleccion);
-                });
-            });
-        } else {
-            divPartidos.textContent = "No hay partidos disponibles para esta elección.";
+        console.log(datosUsuario.idUsuario);
+        const eleccionesUsuario = await getEleccionesUsuario(datosUsuario.idUsuario);
+        console.log(eleccionesUsuario);
+        if (!eleccionesUsuario || !eleccionesUsuario.elecciones) {
+            console.error("No se recibieron elecciones");
+            return;
         }
 
-        const botonVolver = document.createElement('button');
-        botonVolver.textContent = "VOLVER";
-        botonVolver.addEventListener('click', () => {
-            main.innerHTML = '';
-            mostrarContenido();
+        let divGenerales = document.getElementById('elecciones-container-generales');
+        let divAutonomicas = document.getElementById('elecciones-container-autonomicas');
+
+        if (!divGenerales || !divAutonomicas) {
+            console.error("No se encontraron los contenedores de elecciones");
+            return;
+        }
+
+        eleccionesUsuario.elecciones.forEach(eleccion => {
+            if (eleccion.estado === 'abierta') {
+                if (eleccion.tipo === 'general') {
+                    let eleccionDiv = document.createElement('div');
+                    eleccionDiv.className = 'eleccion';
+                    eleccionDiv.innerHTML = `
+                        <img style="width: 10vw; height: auto; margin: 10px;" src="../../img/96.jpg" alt="general">
+                        <p><strong>Elección general nº:</strong> ${eleccion.idEleccion}</p>
+                        <p><strong>Fecha Inicio:</strong> ${eleccion.fechainicio}</p>    
+                        <p><strong>Fecha Fin:</strong> ${eleccion.fechafin}</p>
+                    `;
+
+                    // Evento para elecciones generales
+                    eleccionDiv.addEventListener("click", async () => {
+                        await manejarVotoGeneral(eleccion.idEleccion);
+                    });
+
+                    divGenerales.appendChild(eleccionDiv);
+                }
+
+                if (eleccion.tipo === 'autonomica') {
+                    let eleccionDiv = document.createElement('div');
+                    eleccionDiv.className = 'eleccion';
+                    eleccionDiv.innerHTML = `
+                        <img style="width: 10vw; height: auto; margin: 10px;" src="../../img/autonomicas.png" alt="autonomica">
+                        <p><strong>Elección autonómica nº:</strong> ${eleccion.idEleccion}</p>
+                        <p><strong>Fecha Inicio:</strong> ${eleccion.fechainicio}</p>    
+                        <p><strong>Fecha Fin:</strong> ${eleccion.fechafin}</p>
+                    `;
+
+                    // Evento para elecciones autonómicas
+                    eleccionDiv.addEventListener("click", () => {
+                        manejarVotoAutonomico(eleccion.idEleccion);
+                    });
+
+                    divAutonomicas.appendChild(eleccionDiv);
+                }
+            }
         });
 
-        main.appendChild(divPartidos);
-        main.appendChild(botonVolver);
     } catch (error) {
-        console.error("Error al obtener los partidos de la elección:", error);
+        console.error("Error al cargar elecciones:", error);
     }
 }
 
-// 🔹 Función para mostrar un modal de confirmación de voto
-async function mostrarModal(partido, idPartido, idEleccion) {
-    const modal = document.createElement('div');
-    modal.style.position = 'absolute';
-    modal.style.top = '50%';
-    modal.style.left = '50%';
-    modal.style.transform = 'translate(-50%, -50%)';
-    modal.style.backgroundColor = '#600000';
-    modal.style.padding = '20px';
-    modal.style.borderRadius = '10px';
-    modal.style.border = '1px solid #ccc';
-    modal.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
-    modal.style.zIndex = '9999';
+// Funciones para manejar votos en distintos tipos de elecciones
+async function manejarVotoGeneral(idEleccion) {
+    const main = document.querySelector('main');
+    //ELIMINO EL CONTENIDO ANTERIOR
+    main.innerHTML = '';
+    //GENERO EL CONTENIDO DE LAS VOTACIONES
+    main.innerHTML = `
+        <div id="modalPadreInsert"></div>
+        <h1>PANEL DE VOTACION</h1>
+        <h2>SELECCIONA AL PARTIDO QUE QUIERES VOTAR</h2>
+        <div class="partidos-container">
+            
+        </div>
+        <button id="btn-volver">VOLVER</button>
+    `;
 
-    const mensaje = document.createElement('p');
-    mensaje.textContent = `¿Deseas votar a ${partido.nombre}?`;
-    modal.appendChild(mensaje);
-
-    const botonSi = document.createElement('button');
-    botonSi.textContent = 'SI';
-    botonSi.addEventListener('click', async () => {
-        const datosUsuario = await getDatosUsuario();
-        const datosCenso = await getDatosCensoUsuario(datosUsuario.idCenso);
-
-        const data = {
-            idUsuario: datosUsuario.idUsuario,
-            idEleccion: idEleccion,
-            idPartido: idPartido,
-            email: datosCenso.censo.email,
-            idLocalidad: datosCenso.censo.idLocalidad,
-            idCandidato: null
-        };
-
-        setTimeout(async () => {
-            await votar(data);
-            alert(`HAS VOTADO A ${partido.nombre}`);
-            modal.remove();
-           
-        }, 1000);
+    // EN EL CASO DE DARLE AL BOTON DE VOLVER, VUELVO AL PANEL DE VOTACIONES
+    const buttonVolver = document.getElementById('btn-volver');
+    buttonVolver.addEventListener('click', () => {
+        mostrarContenidoVotacion();
     });
-    const botonNo = document.createElement('button');
-    botonNo.textContent = 'NO';
-    botonNo.addEventListener('click', () => {
-        modal.remove();
-    })
 
-    modal.appendChild(botonSi);
-    modal.appendChild(botonNo);
-    document.body.appendChild(modal);
+    let modalPadre = document.getElementById('modalPadreInsert');
+    modalPadre.style.display = 'none';
+
+    let partidosContainer = document.querySelector('.partidos-container');
+    const partidosJSON = await getPartidos();
+
+    partidosJSON.partidos.forEach(partido => {
+        console.log(partido);
+        let partidoDiv = document.createElement('div');
+        partidoDiv.innerHTML = `
+            <img style="width: 10vw; height: auto; margin: 10px;" src="data:image/png;base64,${partido.imagen}" alt="autonomica">
+            <p><strong>${partido.nombre}</strong></p>
+        `;
+
+        partidoDiv.addEventListener("click", async () => {
+            let confirmarVoto = confirm(`¿Quieres votar a ${partido.nombre}?`);
+            
+            if (confirmarVoto) {
+                const voto = await votarGeneral(idEleccion, partido.idPartido);
+                console.log(voto);
+                if (voto) {
+                    await mostrarContenidoVotacion();
+                } else {
+                    alert('Error al votar: '+voto);
+                }
+            } else {
+                alert("Has cancelado tu voto.");
+            }
+        });
+        
+        partidosContainer.appendChild(partidoDiv);
+    });
 }
+
+async function manejarVotoAutonomico(idEleccion) {
+    
+    const main = document.querySelector('main');
+    //ELIMINO EL CONTENIDO ANTERIOR
+    main.innerHTML = '';
+    //GENERO EL CONTENIDO DE LAS VOTACIONES
+    main.innerHTML = `
+        <div id="modalPadreInsert"></div>
+        <h1>PANEL DE VOTACION</h1>
+        <h2>SELECCIONA AL PARTIDO QUE QUIERES VOTAR</h2>
+        <div class="partidos-container-autonomica">
+            
+        </div>
+        <button id="btn-volver">VOLVER</button>
+    `;
+
+    // EN EL CASO DE DARLE AL BOTON DE VOLVER, VUELVO AL PANEL DE VOTACIONES
+    const buttonVolver = document.getElementById('btn-volver');
+    buttonVolver.addEventListener('click', () => {
+        mostrarContenidoVotacion();
+    });
+
+    let modalPadre = document.getElementById('modalPadreInsert');
+    modalPadre.style.display = 'none';
+
+    let partidosContainer = document.querySelector('.partidos-container-autonomica');
+    const idLocalidadUsuario = datosCensoUsuario.censo.idLocalidad;
+    const partidosLocalidadEleccion = await getPartidosLocalidadEleccion(idLocalidadUsuario, idEleccion);
+    console.log(partidosLocalidadEleccion)
+
+    
+    if (!Array.isArray(partidosLocalidadEleccion.partidos) || partidosLocalidadEleccion.partidos.length === 0) {  
+        const p = document.createElement('p');
+        console.log('NO HAY PARTIDOS EN TU LOCALIDAD');
+        p.innerHTML = `<strong>NO HAY PARTIDOS EN TU LOCALIDAD PARA ESTA ELECCION</strong>`;
+        partidosContainer.appendChild(p);
+    }
+    
+    partidosLocalidadEleccion.partidos.forEach(async partido => {
+        console.log(partido);
+        let partidoDiv = document.createElement('div');
+        const candidatosPartidoLocalidad = await getCandidatosPartido(idLocalidadUsuario);
+        partidoDiv.innerHTML = `
+        
+            <img style="width: 10vw; height: auto; margin: 10px;" src="${partido.imagen}" alt="autonomica">
+            <p><strong>${partido.nombre}</strong></p>
+        `;
+
+        candidatosPartidoLocalidad.candidatos.forEach((candidato, index) => {
+            partidoDiv.innerHTML += `
+                <p><strong>Candidato nº ${index + 1}: ${candidato.apellido}, ${candidato.nombre}</strong></p>
+            `;
+        });
+
+    
+        partidoDiv.addEventListener("click", async () => {
+            let confirmarVoto = confirm(`¿Quieres votar a ${partido.nombre}?`);
+            
+            if (confirmarVoto) {
+                const voto = await votarAutonomica(idEleccion, partido.idPartido);
+                console.log(voto);
+                if (voto) {
+                    await mostrarContenidoVotacion();
+                } else {
+                    alert('Error al votar: '+voto);
+                }
+            } else {
+                alert("Has cancelado tu voto.");
+            }
+        });
+        
+        partidosContainer.appendChild(partidoDiv);
+    });
+
+}
+
+// Ejecutar la función principal
+mostrarContenidoVotacion();

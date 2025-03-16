@@ -28,6 +28,85 @@ export async function getCandidatos() {
     }
 }
 
+export async function getPartidosYVotosAutonomica(idEleccion, idLocalidad) {
+    try {
+        const response = await fetch('../../../controlador/select/selectPartidosYVotosAutonomica.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ idEleccion: idEleccion, idLocalidad: idLocalidad })
+        });
+
+        if (!response.ok) {
+            throw new Error('No se estableció la conexion con selectPartidosYVotosAutonomica.php');
+        }
+
+        const data = await response.json();
+        console.log(data);
+        return data;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+export async function getLocalidades(){
+    try {
+        const response = await fetch('../../../controlador/select/selectTodasLocalidad.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) throw new Error('Error en la petición');
+        return await response.json();
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+export async function getPartidosYVotosGenerales(idEleccion) {
+    try {
+        const response = await fetch('../../../controlador/select/selectPartidosYvotosEleccionesGenerales.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ idEleccion: idEleccion })
+        });
+
+        if (!response.ok) {
+            throw new Error('No se estableció la conexion con selectPartidosYVotosGenerales.php');
+        }
+
+        const data = await response.json();
+        console.log(data);
+        return data;
+    } catch (error) {
+        console.error(error);
+    }
+
+}
+export async function getEleccionesUsuario(idUsuario) {
+    try {
+        const response = await fetch('../../../controlador/select/selectEleccionesUsuario.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ idUsuario: idUsuario })
+        });
+
+        if (!response.ok) {
+            throw new Error('No se estableció la conexion con selectEleccionesUsuario.php');
+        }
+
+        const data = await response.json();
+        console.log(data);
+        return data;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 export async function getPartidos() {
     const fetchOptions = {
         method: 'POST',
@@ -151,6 +230,52 @@ export async function getDatosUsuario() {
     }
 }
 
+export async function getPartidosLocalidadEleccion(idLocalidad, idEleccion) {
+    try {
+        const response = await fetch('../../../controlador/select/selectPartidosLocalidadEleccion.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ idLocalidad: idLocalidad, idEleccion: idEleccion })
+        });
+
+        if (!response.ok) {
+            throw new Error('No se estableció la conexion con selectPartidosLocalidadEleccion.php');
+        }
+
+        const data = await response.json();
+        console.log(data);
+        return data;
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+export async function getPartidosLocalidad(idLocalidad) {
+    try {
+        const response = await fetch('../../../controlador/select/selectPartidosLocalidad.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ idLocalidad: idLocalidad })
+        });
+
+        if (!response.ok) {
+            throw new Error('No se estableció la conexion con selectPartidosLocalidad.php');
+        }
+
+        const data = await response.json();
+        console.log(data);
+        return data;
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 export async function getDatosCensoUsuario(idCenso) {
     const fetchOptions = {
         method: 'POST',
@@ -181,7 +306,29 @@ export async function getDatosCensoUsuario(idCenso) {
     }
 }
 
-export async function getCandidatosPartido(idPartido){
+export async function getCandiadatosPartidoLocalidad(idPartido, idLocalidad, idEleccion) {
+    try {
+        const response = await fetch('../../../controlador/select/selectCandidatosPartidoLocalidad.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ idPartido: idPartido, idLocalidad: idLocalidad, idEleccion: idEleccion })
+        });
+
+        if (!response.ok) {
+            throw new Error('No se estableció la conexion con selectCandidatosPartidoLocalidad.php');
+        }    
+
+        const data = await response.json();
+        console.log(data);
+        return data;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+export async function getCandidatosPartido(idPartido) {
     const fetchOptions = {
         method: 'POST',
         headers: {
@@ -212,7 +359,7 @@ export async function getCandidatosPartido(idPartido){
 
 }
 //TIene que devilver nombre y votos
-export async function getResultadosEleccion(idEleccion){
+export async function getResultadosEleccion(idEleccion) {
     const fetchOptions = {
         method: 'POST',
         headers: {
@@ -242,13 +389,13 @@ export async function getResultadosEleccion(idEleccion){
         console.error('Error en getPartidos() ', error);
     }
 }
-export async function actualizarUsuario({ correo, password,  idUsuario, idCenso }) {
+export async function actualizarUsuario({ correo, password }) {
     const fetchOptions = {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ correo, password, idCenso, idUsuario })
+        body: JSON.stringify({ correo, password })
     };
 
     try {
@@ -259,7 +406,7 @@ export async function actualizarUsuario({ correo, password,  idUsuario, idCenso 
         }
 
         const data = await response.json();
-        
+
         if (data.error) {
             console.error(data.error);
             throw new Error(data.error);
@@ -269,5 +416,100 @@ export async function actualizarUsuario({ correo, password,  idUsuario, idCenso 
     } catch (error) {
         console.error('Error en actualizarUsuario():', error);
         throw error;
+    }
+}
+
+export async function actualizarUsuarioEditarPerfil(nombre, apellido, correo, password, idUsuario, idCenso) {
+    try {
+        console.log('Entra en actualizarUsuarioEditarPerfil');
+        console.log(nombre);
+        console.log(apellido);
+        console.log(correo);
+        console.log(password);
+        console.log(idUsuario);
+        console.log(idCenso)
+        const response = await fetch('../../../controlador/update/updateEditarPerfil.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                nombre: nombre,
+                apellido: apellido,
+                correo: correo,
+                password: password,
+                idUsuario: idUsuario,
+                idCenso: idCenso
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('No se estableció la conexion con updateUsuarioEditarPerfil.php');
+        }
+        const data = await response.json();
+        console.log(data);
+        if (data.status === 'success') {
+            alert('Has actualizado tu perfil');
+        }
+        return data;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+export async function votarAutonomica(idEleccion, idPartido) {
+    const datosUsuario = await getDatosUsuario();
+    const datosCensoUsuario = await getDatosCensoUsuario(datosUsuario.idCenso);
+    try {
+        const response = await fetch('../../../controlador/insert/insertVotoAutonomico.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                idEleccion: idEleccion,
+                idPartido: idPartido,
+                idUsuario: datosUsuario.idUsuario,
+                idLocalidad: datosCensoUsuario.censo.idLocalidad
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('No se estableció la conexion con insertVotoAutonomica.php');
+        }
+        const data = await response.json();
+        console.log(data);
+        return data;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+export async function votarGeneral(idEleccion, idPartido) {
+
+    const datosUsuario = await getDatosUsuario();
+
+    try {
+        const response = await fetch('../../../controlador/insert/insertVotoGeneral.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                idEleccion: idEleccion,
+                idPartido: idPartido,
+                idUsuario: datosUsuario.idUsuario
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('No se estableció la conexion con insertVotoGeneral.php');
+        }
+        const data = await response.json();
+        console.log(data);
+        return data;
+
+    } catch (error) {
+        console.error(error);
     }
 }

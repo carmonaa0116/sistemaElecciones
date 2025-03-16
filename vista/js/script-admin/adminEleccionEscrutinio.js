@@ -1,334 +1,171 @@
-import { getDnisCenso, getIdElecciones, getLocalidades, getDatosCenso, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato, getNombrePartidoConId } from "./apiAdmin.js";
+import { getDnisCenso, getIdElecciones, getLocalidades, getDatosCenso, getCandidatosNombre, insertarCandidato, getUnDniConIdCenso, getUnaLocalidadIdLocalidad, getUnaPreferenciaIdCandidato, updateCandidatoFormUpdate, deleteCandidato, getNombrePartidoConId, getElecciones, updateEleccionFormUpdate, enviarCorreoGanador } from "./apiAdmin.js";
 import { createSubmitButton, createCloseButton, createDeleteButton, createLabeledField } from "./generarContenidoSinEleccion.js";
 import { getPartidos } from "./apiAdmin.js";
 import { createHeader } from "../main-content/utilidades.js";
 
 export async function generarContenidoEleccionAEscrutinio() {
-    
+
     const main = document.querySelector('main');
-    
+
     main.innerHTML = `
 
         <div id="modalPadreInsert"></div>
-        <h1>PANEL CANDIDATOS</h1>
-        <div class="gridTable">
-
-            <div class="gridTitleHeader">
-
-                <h2>idCandidato</h2>
-                <h2>idCenso</h2>
-                <h2>Partido</h2>
-                <h2>Localidad</h2>
-                <h2>Numero Candidato</h2>
-                <h2>Eleccion Asociada</h2>
-
+        <h1>APERTURA O CIERRE DE ESCRUTINIO</h1>
+        <div class="elecciones-container">
+            <h2>ELECCIONES GENERALES</h2>
+            <div id="elecciones-container-generales" class="elections-container">
+                <!-- Aqui las elecciones generales -->
             </div>
-
-            <div class="gridTableBody" id="gridTableBody">
-
-                <!-- Aquí se generará la tabla -->
-            
+            <h2>ELECCIONES AUTONOMICAS</h2>
+            <div id="elecciones-container-autonomicas" class="elections-container">
+                <!-- Aqui las elecciones autonomicas -->
             </div>
-        
         </div>
 
-    
     `;
 
     const contenidoModal = `
 
         <button type="submit" class="btn-close" id="cerrar">Cerrar</button>
-
-        <form class="formularioModal">
         
+        <div class="formularioModal">
+        <h1>¿QUE QUIERES HACER CON LA ELECCION?</h1>
             <div class="flexModalSection">
             
                 <div>
-                    <label for="select-opciones-dni">DNI:</label>
-                    <select name="select-opciones-dni" id="select-opciones-dni"></select>
+                    <button id="btn-abrir">Abrir</button>
                 </div>
-
                 <div>
-                    <label for="select-opciones-localidad">Localidad:</label>
-                    <select name="select-opciones-localidad" id="select-opciones-localidad"></select>
+                    <button id="btn-cerrar">Cerrar</button>
+                </div>
+                                <div>
+                    <button id="btn-terminar">Terminar</button>
                 </div>
             
             </div>
-
-            <div class="flexModalSection">
-            
-                <div>
-                    <label for="select-opciones-idElecciones">Elección:</label>
-                    <select name="select-opciones-idElecciones" id="select-opciones-idElecciones"></select>
-                </div>
-
-                <div>
-                    <label for="select-opciones-preferencia">Preferencia:</label>
-                    <select name="select-opciones-preferencia" id="select-opciones-preferencia"></select>
-                </div>
-            
-            </div>
-
-            <div>
-                <label for="select-opciones-partidos">Partido:</label>
-                <select name="select-opciones-partidos" id="select-opciones-partidos"></select>
-            </div>
-
-            <div class="buttonModalSection">
-
-                <button type="submit" class="btn-submit" id="insertar">Insertar</button>
-                <button type="submit" class="btn-delete" id="borrar">Borrar</button>
-                <button type="submit" class="btn-update" id="actualizar">Actualizar</button>
-
-            </div>
-        
-        </form>
-
+        </div>
     `;
+
+
+    const contenedorElecciones = document.querySelector('.elecciones-container');
+    const contenedorGenerales = document.getElementById('elecciones-container-generales');
+    const contenedorAutonomicas = document.getElementById('elecciones-container-autonomicas');
+
 
     let modalPadre = document.getElementById('modalPadreInsert');
     modalPadre.style.display = 'none';
     modalPadre.innerHTML = contenidoModal;
 
-    const gridTableBody = document.getElementById('gridTableBody');
-    const borrarBtn = document.getElementById('borrar');
-    const actualizarBtn = document.getElementById('actualizar');
+    const contenedorBotones = document.querySelector('formularioModal');
+
     const cerrarBtn = document.getElementById('cerrar');
-    const insertar = document.getElementById('insertar');
-    const btnInsertar = await createInsertButton(borrarBtn, actualizarBtn, insertar); 
+    let abrirBtn = document.getElementById('btn-abrir');
+    let terminarBtn = document.getElementById('btn-terminar');
+    let cerrarEleccionBtn = document.getElementById('btn-cerrar');
 
+    fillElections(contenedorGenerales, contenedorAutonomicas);
 
-    createGridTable(gridTableBody)
     cerrarBtn.addEventListener("click", () => handleCerrarBtn(modalPadre))
-
-    main.appendChild(btnInsertar);
     document.body.appendChild(main);
 }
 
 
-// AQUI SE CREA EL INSERT BUTTON DONDE CARGA INFORMACIÖN DENTRO DE LOS SELECTS
-async function createInsertButton(borrarBtn, actualizarBtn, insertar) {
-    const btnInsertar = document.createElement('button');
-    btnInsertar.id = 'btn-insertar';
-    btnInsertar.textContent = 'Insertar Candidato';
-    
-    btnInsertar.addEventListener('click', async (event) => {
-        
-        event.preventDefault();
+async function fillElections(contenedorGenerales, contenedorAutonomicas) {
 
-        const divPadre = document.getElementById('modalPadreInsert');
-        divPadre.style.display = 'flex';
-        insertar.style.display = 'block';
-        borrarBtn.style.display = "none";
-        actualizarBtn.style.display = "none";
+    let elecciones = await getElecciones();
+    console.log(elecciones)
+    for (let eleccion of elecciones) {
 
-        // RELLENANDO LOS CAMPOS DEL FORMULARIO
-        await cargarSelects()
+        let idEleccion = eleccion.idEleccion;
+        let tipoEleccion = eleccion.tipo;
+        let estadoEleccion = eleccion.estado;
+        let fechaInicioEleccion = eleccion.fechaInicio;
+        let fechaFinEleccion = eleccion.fechaFin;
 
-        insertar.addEventListener('click', async (event) => {
+        let eleccionDiv = document.createElement('div');
+        eleccionDiv.className = 'eleccion';
+        if(eleccion.estado === "cerrada") {
+            eleccionDiv.style.backgroundColor = "#602b00";
+        } else if(eleccion.estado === "abierta") {
+            eleccionDiv.style.backgroundColor = "#0b6000";
+        } else if(eleccion.estado === "terminada") {
+            eleccionDiv.style.backgroundColor = "#750000";
+        }
+        eleccionDiv.innerHTML = `
+            <img style="width: 10vw; height: auto; margin: 10px;" src="../../img/${tipoEleccion === "general" ? "96.jpg" : "autonomicas.png"}" alt="${tipoEleccion}">
+            <p><strong>Elección ${tipoEleccion} nº:</strong> ${idEleccion}</p>
+            <p><strong>Estado:</strong> ${estadoEleccion}</p>
+            <p><strong>Fecha Inicio:</strong> ${fechaInicioEleccion}</p>    
+            <p><strong>Fecha Fin:</strong> ${fechaFinEleccion}</p>
+        `;
 
-            // Prevent the default form submission
+        eleccionDiv.addEventListener('click', async (event) => {
             event.preventDefault();
+            let modalPadre = document.getElementById('modalPadreInsert');
+            modalPadre.style.display = 'block';
+            const contenidoModal = `
 
-            // OBTENER LOS VALORES DE LOS SELECTS
-            const dni = document.getElementById('select-opciones-dni').value;
-            const localidad = document.getElementById('select-opciones-localidad').value;
-            const idElecciones = document.getElementById('select-opciones-idElecciones').value;
-            const preferencia = document.getElementById('select-opciones-preferencia').value;
-            const partido = document.getElementById('select-opciones-partidos').value;
-
-            let insertandoCandidato = await insertarCandidato(dni, localidad, idElecciones, preferencia, partido);
-            console.log(insertandoCandidato);
-        })
-
-
-    });
-
-    return btnInsertar;
-}
-
-// RELLENANDO LOS CAMPOS DE LOS FORMULARIOS
-async function cargarSelects(){
-    
-    // AQUÍ EMPIEZA EL CÓDIGO PARA CARGAR LOS DATOS PARA EL MODAL
-    async function createSelectDnis() {
-
-
-        let jsonDni = await getDnisCenso();
-        let selectDNIS = document.getElementById('select-opciones-dni');
-        // Opción por defecto
-        const defaultOption = document.createElement('option');
-        defaultOption.value = ""; // Valor null en HTML se representa con una cadena vacía
-        defaultOption.textContent = `Selecciona Dni`;
-        defaultOption.selected = true;
-        defaultOption.disabled = true;
-        selectDNIS.appendChild(defaultOption);
-
-        let listaDNIs = jsonDni.value;
-
-        listaDNIs.forEach(dni => {
-            const option = document.createElement('option');
-            option.value = dni.dni;
-            option.textContent = dni.dni;
-            selectDNIS.append(option);
-        });
-    }
-
-    async function createSelectIdElecciones() {
-        
-        let jsonElecciones = await getIdElecciones();
-        let selectIdElecciones = document.getElementById('select-opciones-idElecciones');
-
-        const defaultOption = document.createElement('option');
-        defaultOption.value = "";
-        defaultOption.textContent = `Selecciona elecciones`;
-        defaultOption.selected = true;
-        defaultOption.disabled = true;
-        selectIdElecciones.appendChild(defaultOption);
-
-        jsonElecciones.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item;
-            option.textContent = item;
-            selectIdElecciones.append(option);
-        });
-
-    }
-
-    async function createSelectLocalidad() {
-        
-        let localidades = await getLocalidades();
-        let selectLocalidad = document.getElementById('select-opciones-localidad');
-
-        localidades.localidades.forEach(localidad => {
-            const option = document.createElement('option');
-            option.value = localidad.idLocalidad;
-            option.textContent = localidad.nombre;
-            selectLocalidad.appendChild(option);
-        });
-
-    }
-
-    function createSelectPreferencia() {
-
-        const selectPreferencia = document.getElementById("select-opciones-preferencia")
-
-        const optionNull = document.createElement('option');
-        optionNull.name = null;
-        optionNull.textContent = 'Selecciona la preferencia';
-
-        selectPreferencia.appendChild(optionNull);
-
-        const preferencias = ["1", "2", "3"];
-
-        preferencias.forEach(preferencia => {
-            const option = document.createElement('option');
-            option.id = `preferencia-${preferencia}`;
-            option.name = `preferencia-${preferencia}`;
-            option.textContent = preferencia;
-            selectPreferencia.appendChild(option);
-        });
-
-    }
-
-    async function createSelectPartidos() {
-        
-        let partidos = await getPartidos();
-        const selectPartidos = document.getElementById('select-opciones-partidos');
-
-        partidos.forEach(partido => {
-            const option = document.createElement('option');
-            option.value = partido.idPartido;
-            option.textContent = partido.nombre;
-            selectPartidos.appendChild(option);
-        });
-    }
-
-    await createSelectDnis();
-    await createSelectPartidos();
-    await createSelectIdElecciones();
-    await createSelectLocalidad();
-    createSelectPreferencia();
-}
-
-async function createGridTable(gridTable){
-
-    let candidatos = await getCandidatosNombre();
-    let modalPadre = document.getElementById('modalPadreInsert');
-    const borrarBtn = document.getElementById('borrar');
-    const actualizarBtn = document.getElementById('actualizar');
-    const btnInsertar = document.getElementById('insertar');
-    
-    candidatos.forEach(async candidato => {
-
-        let dniCandidato = await getUnDniConIdCenso(candidato.idCenso);
-        
-        let idCandidato = candidato.idCandidato;
-        let idCenso = candidato.idCenso;
-        let idLocalidad = candidato.idLocalidad;
-        let idEleccion = candidato.idEleccion;
-        let idPartido = candidato.idPartido;
-        let preferencia = candidato.preferencia;
-
-        const gridRow = document.createElement("div");
-        let gridRowHTML = `
-
-            <p>${idCandidato}</p>
-            <p>${idCenso}</p>
-            <p>${idPartido}</p>
-            <p>${idLocalidad}</p>
-            <p>${preferencia}</p>
-            <p>${idEleccion}</p>
-        
-        `
-
-        // ESTO ES CUANDO HACES CLIC ENCIMA DE UN CANDIDATO
-        gridRow.addEventListener("click", async () => {
+            <button type="submit" class="btn-close" id="cerrar">Cerrar</button>
             
-            modalPadre.style.display = 'flex';
-            actualizarBtn.style.display = 'block';
-            borrarBtn.style.display = 'block';
-            btnInsertar.style.display = 'none';
+            <div class="formularioModal">
+            <h1>¿QUE QUIERES HACER CON LA ELECCION?</h1>
+                <div class="flexModalSection">
+                
+                    <div>
+                        <button id="btn-abrir">Abrir</button>
+                    </div>
+                    <div>
+                        <button id="btn-cerrar">Cerrar</button>
+                    </div>
+                    <div>
+                        <button id="btn-terminar">Terminar</button>
+                    </div>
+                
+                </div>
+            </div>
+        `;
+            modalPadre.innerHTML = contenidoModal;
 
-            await cargarSelects();
+            let abrirBtn = document.getElementById('btn-abrir');
+            let terminarBtn = document.getElementById('btn-terminar');
+            let cerrarEleccionBtn = document.getElementById('btn-cerrar');
 
-            let selectDni = document.getElementById('select-opciones-dni');
-            let selectPartido = document.getElementById('select-opciones-partidos');
-            let selectIdElecciones = document.getElementById('select-opciones-idElecciones');
-            let selectLocalidad = document.getElementById('select-opciones-localidad');
-            let selectPreferencia = document.getElementById('select-opciones-preferencia');
-            
-            selectDni.value = dniCandidato.dni;
-            selectPartido.value = candidato.idPartido;
-            selectIdElecciones.value = candidato.idEleccion;
-            selectLocalidad.value = candidato.idLocalidad;
-            selectPreferencia.value = candidato.preferencia;
+            abrirBtn.addEventListener('click', async () => {
+                let estado = 'abierta';
+                await updateEleccionFormUpdate(idEleccion, tipoEleccion, estado, fechaInicioEleccion, fechaFinEleccion);
+                handleCerrarBtn(modalPadre);
+                window.location.reload();
+            });
 
-        })
+            terminarBtn.addEventListener('click', async () => {
+                let estado = 'finalizada';
+                await updateEleccionFormUpdate(idEleccion, tipoEleccion, estado, fechaInicioEleccion, fechaFinEleccion);
+                handleCerrarBtn(modalPadre);
+                let enviarCorreo = await enviarCorreoGanador(idEleccion);
+                console.log(enviarCorreo);
+                window.location.reload();
+                
+            });
+
+            cerrarEleccionBtn.addEventListener('click', async () => {
+                let estado = 'cerrada';
+                await updateEleccionFormUpdate(idEleccion, tipoEleccion, estado, fechaInicioEleccion, fechaFinEleccion);
+                handleCerrarBtn(modalPadre);
+                window.location.reload();
+            });
 
 
-        // GESTION DEL BORRARDO Y ACTUALIZACION
-        borrarBtn.addEventListener('click', async (event) => {
-            event.preventDefault();
-            let borrado = await deleteCandidato(candidato.idCandidato);
-            console.log(borrado);
-            createGridTable(gridTable);
-        })
 
-        actualizarBtn.addEventListener('click', async (event) => {
-            event.preventDefault();
-            await updateCandidato(candidato.idCandidato, candidato.idCenso, candidato.idPartido, candidato.idLocalidad, candidato.preferencia, candidato.idEleccion);
-            location.reload();
-        })
+        });
 
-        gridRow.innerHTML = gridRowHTML;
-        gridTable.appendChild(gridRow);
-        
-
-    })
-
+        if (tipoEleccion == 'general') {
+            contenedorGenerales.appendChild(eleccionDiv);
+        } else {
+            contenedorAutonomicas.appendChild(eleccionDiv);
+        }
+    }
 }
 
-function handleCerrarBtn(modal){
+function handleCerrarBtn(modal) {
     modal.style.display = 'none';
 }

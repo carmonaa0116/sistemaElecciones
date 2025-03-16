@@ -23,6 +23,21 @@ export async function getIdElecciones() {
     }
 }
 
+export async function enviarCorreoGanador(idEleccion) {
+    try {
+        const response = await fetch('../../../controlador/auth/correoGanador.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idEleccion: idEleccion })
+        });
+        if (!response.ok) throw new Error('Error en la petición');
+        return await response.json();
+    } catch (error) {
+        console.error('Error en enviarCorreoGanador:', error);
+        return error;
+    }
+}
+
 export async function getDnisCenso() {
     try {
         const response = await fetch('../../../controlador/select/selectDnisCenso.php');
@@ -77,7 +92,6 @@ export async function getUnaLocalidadIdLocalidad(idLocalidad) {
             throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        console.log(data);
         if (data.error) console.error(data.error);
         return data;
 
@@ -207,7 +221,15 @@ export async function insertarEleccion(tipo, estado, fechainicio, fechafin) {
 
 
 
-export async function insertarCandidato(dni, idLocalidad, idEleccion, preferencia, partido) {
+export async function insertarCandidato(dni, idLocalidad, idEleccion, preferencia, idPartido) {
+
+    console.log('Entra en insertarCandidato');
+    console.log('dni: ', dni);
+    console.log('idLocalidad: ', idLocalidad);
+    console.log('idEleccion: ', idEleccion);
+    console.log('preferencia: ', preferencia);
+    console.log('idPartido: ', idPartido);
+
     try {
         const response = await fetch('../../../controlador/insert/insertarAcandidatos.php', {
             method: 'POST',
@@ -219,7 +241,7 @@ export async function insertarCandidato(dni, idLocalidad, idEleccion, preferenci
                 idLocalidad: idLocalidad,
                 idEleccion: idEleccion,
                 preferencia: preferencia,
-                partido: partido
+                idPartido: idPartido
             })
         });
 
@@ -238,22 +260,35 @@ export async function insertarCandidato(dni, idLocalidad, idEleccion, preferenci
     }
 }
 
-export async function insertarPartido(formData) {
+export async function insertarPartido(nombre, siglas, imagenFile) {
     try {
-        const response = await fetch('../../../controlador/insert/insertarApartidos.php', {
-            method: 'POST',
-            body: formData // `FormData` incluye la imagen y los textos
-        });
+        const reader = new FileReader();
+        reader.readAsDataURL(imagenFile);
 
-        if (!response.ok) {
-            throw new Error('La respuesta no fue correcta');
-        }
-        const data = await response.json();
-        if (data.exito) alert(data.exito);
-        if (data.error) {
-            console.log(data.error);
-            return null;
-        }
+        reader.onload = async () => {
+            const imagenBase64 = reader.result; // Imagen en formato Base64
+
+            const response = await fetch('../../../controlador/insert/insertarApartidos.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nombre: nombre,
+                    siglas: siglas,
+                    imagen: imagenBase64
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('La respuesta no fue correcta');
+            }
+
+            const data = await response.json();
+            if (data.exito) alert(data.exito);
+            if (data.error) {
+                console.log(data.error);
+                return null;
+            }
+        };
     } catch (error) {
         console.error('Ha habido un problema con el fetch: ', error);
         throw error;
@@ -368,7 +403,7 @@ export async function getElecciones() {
     }
 }
 
-export async function updateEleccionFormUpdate(atributos) {
+export async function updateEleccionFormUpdate(idEleccion, tipo, estado, fechaInicio, fechaFin) {
     try {
         const response = await fetch('../../../controlador/update/updateUnaEleccionFormUpdate.php', {
             method: 'POST',
@@ -376,11 +411,11 @@ export async function updateEleccionFormUpdate(atributos) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                idEleccion: atributos.idEleccion,
-                tipo: atributos.tipo,
-                estado: atributos.estado,
-                fechaInicio: atributos.fechaInicio,
-                fechaFin: atributos.fechaFin
+                idEleccion: idEleccion,
+                tipo: tipo,
+                estado: estado,
+                fechaInicio: fechaInicio,
+                fechaFin: fechaFin
             })
         });
         if (!response.ok) {
@@ -398,7 +433,7 @@ export async function updateEleccionFormUpdate(atributos) {
 }
 
 
-export async function updateCandidatoFormUpdate(atributos) {
+export async function updateCandidatoFormUpdate(idCandidato, dni, idPartido, idEleccion, preferencia, idLocalidad) {
     try {
         const response = await fetch('../../../controlador/update/updateUnCandidatoFormUpdate.php', {
             method: 'POST',
@@ -406,13 +441,12 @@ export async function updateCandidatoFormUpdate(atributos) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                idCandidato: atributos.idCandidato,
-                dni: atributos.dni,
-                localidad: atributos.localidad,
-                eleccion: atributos.eleccion,
-                preferencia: atributos.preferencia,
-                localidad: atributos.localidad,
-                idPartido: atributos.idPartido
+                idCandidato: idCandidato,
+                dni: dni,
+                idPartido: idPartido,
+                idEleccion: idEleccion,
+                preferencia: preferencia,
+                idLocalidad: idLocalidad
             })
         });
         if (!response.ok) {
@@ -421,8 +455,7 @@ export async function updateCandidatoFormUpdate(atributos) {
         const data = await response.json();
         console.log('Respuesta de getElecciones: ');
         console.log(data);
-        if (data.exito) return data.exito;
-        if (data.error) return data.error;
+        return data;
 
     } catch (error) {
         console.error('Error en updateCandidato: ', error);
@@ -497,11 +530,16 @@ export async function updateEleccion(formData) {
     }
 }
 
-export async function updatePartido(formData) {
+export async function updatePartido(idPartido, nombre, siglas, imagen) {
     try {
         const response = await fetch('../../../controlador/update/updateUnPartido.php', {
             method: 'POST',
-            body: formData // Enviar FormData (sin headers!)
+            body: JSON.stringify({
+                idPartido: idPartido,
+                nombre: nombre,
+                siglas: siglas,
+                imagen: imagen
+            })
         });
 
         if (!response.ok) {

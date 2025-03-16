@@ -1,17 +1,22 @@
 <?php
-
+header('Content-Type: application/json');
 require_once '../../bd/conectar.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
+
+if ($data === null) {
+    echo json_encode(['error' => 'Error al decodificar el JSON']);
+    exit;
+}
 $conexion = $conn;
 
-if (isset($data['idCandidato'], $data['dni'], $data['localidad'], $data['eleccion'], $data['preferencia'], $data['idPartido'])) {
+if (isset($data['idCandidato'], $data['dni'], $data['idLocalidad'], $data['idEleccion'], $data['preferencia'], $data['idPartido'])) {
     $idCandidato = $data['idCandidato'];
     $dni = $data['dni'];
-    $localidad = $data['localidad'];
-    $idEleccion = $data['eleccion'];
+    $idLocalidad = $data['idLocalidad'];
+    $idEleccion = $data['idEleccion'];
     $preferencia = $data['preferencia'];
-    $nombrePartido = $data['idPartido']; // Es un nombre, no un ID
+    $idPartido = $data['idPartido']; // Es un nombre, no un ID
 
     // Obtener ID del censo a partir del DNI
     $idCenso = getIdCenso($dni, $conexion);
@@ -19,21 +24,6 @@ if (isset($data['idCandidato'], $data['dni'], $data['localidad'], $data['eleccio
         echo json_encode(['error' => 'DNI no encontrado en el censo']);
         exit;
     }
-
-    // Obtener ID de la localidad a partir del nombre
-    $idLocalidad = getIdLocalidad($localidad, $conexion);
-    if ($idLocalidad === null) {
-        echo json_encode(['error' => 'Localidad no encontrada']);
-        exit;
-    }
-
-    // Obtener ID del partido a partir del nombre
-    $idPartido = getIdPartido($nombrePartido, $conexion);
-    if ($idPartido === null) {
-        echo json_encode(['error' => 'Partido no encontrado']);
-        exit;
-    }
-
     // Actualizar datos del candidato
     $sqlCandidato = "UPDATE candidato SET idCenso = ?, idLocalidad = ?, idEleccion = ?, preferencia = ?, idPartido = ? WHERE idCandidato = ?";
     $stmtCandidato = $conexion->prepare($sqlCandidato);
@@ -57,7 +47,12 @@ if (isset($data['idCandidato'], $data['dni'], $data['localidad'], $data['eleccio
 
     $stmtCandidato->close();
 } else {
-    echo json_encode(['error' => 'Hay datos de entrada incompletos']);
+    echo json_encode(
+        [
+            'error' => 'Hay datos de entrada incompletos',
+            'datos_incompletos' => $data
+        ]
+    );
     exit;
 }
 
@@ -82,42 +77,4 @@ function getIdCenso($dni, $conexion) {
     }
 }
 
-// Obtener ID de la localidad por nombre
-function getIdLocalidad($localidad, $conexion) {
-    $sql = "SELECT idLocalidad FROM localidad WHERE nombre = ?";
-    $stmt = $conexion->prepare($sql);
-
-    if (!$stmt) {
-        return null;
-    }
-
-    $stmt->bind_param('s', $localidad);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($row = $result->fetch_assoc()) {
-        return $row['idLocalidad'];
-    } else {
-        return null;
-    }
-}
-
 // Obtener ID del partido por nombre
-function getIdPartido($nombrePartido, $conexion) {
-    $sql = "SELECT idPartido FROM partido WHERE nombre = ?";
-    $stmt = $conexion->prepare($sql);
-
-    if (!$stmt) {
-        return null;
-    }
-
-    $stmt->bind_param('s', $nombrePartido);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($row = $result->fetch_assoc()) {
-        return $row['idPartido'];
-    } else {
-        return null;
-    }
-}

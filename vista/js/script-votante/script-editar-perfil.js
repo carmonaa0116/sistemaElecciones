@@ -1,97 +1,62 @@
-import { crearBotonCerrarSesion } from "../main-content/utilidades.js";
-import { actualizarUsuario, getDatosCensoUsuario, getDatosUsuario } from "./apiVotante.js";
+import { actualizarUsuarioEditarPerfil, getDatosCensoUsuario, getDatosUsuario } from './apiVotante.js';
 
-document.addEventListener('DOMContentLoaded', () => {
-    mostrarContenido();
-});
-async function mostrarContenido() {
+generarContenido();
+
+export async function generarContenido() {
     const main = document.querySelector('main');
-    main.innerHTML = ""; // Limpiar contenido previo
 
-    const botonCerrarSesion = crearBotonCerrarSesion();
-    const header = createHeader();
-    const h1 = document.createElement('h1');
-    h1.textContent = "EDITAR PERFIL";
+    main.innerHTML = `
+        <h1>EDITAR PERFIL</h1>
+        <div class="container-perfil">
+            <form class="perfil-form" autocomplete="off">
+                <div class="contenido-inputs">
+                    <div>
+                        <label for="input-nombre">Nombre:</label>
+                        <input type="text" id="input-nombre" name="input-nombre" autocomplete="off"><br><br>
+                    </div>
+                    <div>
+                        <label for="input-apellido">Apellido:</label>
+                        <input type="text" id="input-apellido" name="input-apellido" autocomplete="off"><br><br>
+                    </div>
+                    <div>
+                        <label for="input-correo">Correo:</label>
+                        <input type="email" id="input-correo" name="input-correo" autocomplete="off"><br><br>
+                    </div>
+                    <div>
+                        <label for="input-password">Contraseña:</label>
+                        <input type="password" id="input-password" name="input-password" autocomplete="new-password"><br><br>
+                    </div>
+                </div>
+                <input type="submit" value="Actualizar">
+            </form>
+        </div>
+    `;
 
-    const divContenido = document.createElement('div');
-    divContenido.className = 'divContenido';
-
-    const form = document.createElement('form');
-    form.id = 'formEditarPerfil';
-
-    // Obtener datos del usuario
-    const datos = await getDatosUsuario();
-    console.log(datos.idUsuario);
-    const datosCenso = await getDatosCensoUsuario(datos.idUsuario);
-    console.log(datosCenso);
-    // Crear campos del formulario con valores prellenados
-    const labelEmail = document.createElement('label');
-    labelEmail.setAttribute('for', 'email');
-    labelEmail.textContent = 'Nuevo Correo:';
-    form.appendChild(labelEmail);
-
-    const inputEmail = document.createElement('input');
-    inputEmail.type = 'email';
-    inputEmail.id = 'email';
-    inputEmail.name = 'email';
-    inputEmail.value = datosCenso.censo.email;
-    inputEmail.required = true;
-    form.appendChild(inputEmail);
-
-    const labelPassword = document.createElement('label');
-    labelPassword.setAttribute('for', 'password');
-    labelPassword.textContent = 'Nueva Contraseña:';
-    form.appendChild(labelPassword);
-
-    const inputPassword = document.createElement('input');
-    inputPassword.type = 'password';
-    inputPassword.id = 'password';
-    inputPassword.name = 'password';
-    inputPassword.required = true;
-    form.appendChild(inputPassword);
-
-    const submitButton = document.createElement('button');
-    submitButton.type = 'submit';
-    submitButton.textContent = 'Guardar Cambios';
-    form.appendChild(submitButton);
-
-
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const datos = await getDatosUsuario();
-        const datosCenso = await getDatosCensoUsuario(datos.idUsuario);
-        const idUsuario = datos.idUsuario;
-        const idCenso = datosCenso.censo.idCenso;
-        try {  
-            await actualizarUsuario({ email, password, idUsuario, idCenso });
-            alert('Perfil actualizado con éxito');
-        } catch (error) {
-            console.error("Error al actualizar usuario:", error);
-            alert('Error al actualizar perfil');
-        }
-    });
-
-    divContenido.appendChild(form);
-    main.appendChild(botonCerrarSesion);
-    main.appendChild(header);
-    main.appendChild(h1);
-    main.appendChild(divContenido);
+    await fillContent();
 }
 
+async function fillContent() {
+    const datosUsuario = await getDatosUsuario();
+    const datosCensoUsuario = await getDatosCensoUsuario(datosUsuario.idCenso);
 
-function createHeader() {
-    const header = document.createElement('header');
-    header.className = 'logoCivio';
+    console.log(datosCensoUsuario, datosUsuario);
 
-    const a = document.createElement('a');
-    a.href = '../main.php';
+    // Rellenar los campos del formulario con los datos del usuario
+    document.getElementById('input-nombre').value = datosCensoUsuario.censo.nombre;
+    document.getElementById('input-apellido').value = datosCensoUsuario.censo.apellido;
+    document.getElementById('input-correo').value = datosCensoUsuario.censo.email;
+    document.getElementById('input-password').value = '';
 
-    const img = document.createElement('img');
-    img.src = '../../img/logoCivio.png';
+    document.querySelector('.perfil-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
 
-    a.appendChild(img);
-    header.appendChild(a);
-    return header;
+        const nombre = document.getElementById('input-nombre').value;
+        const apellido = document.getElementById('input-apellido').value;
+        const correo = document.getElementById('input-correo').value;
+        const password = document.getElementById('input-password').value;
+
+        await actualizarUsuarioEditarPerfil(nombre, apellido, correo, password, datosUsuario.idUsuario, datosUsuario.idCenso);
+
+        window.location.reload();
+    });
 }

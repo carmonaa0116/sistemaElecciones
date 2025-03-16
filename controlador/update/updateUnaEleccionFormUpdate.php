@@ -13,14 +13,15 @@ if (isset($data['idEleccion']) && isset($data['tipo']) && isset($data['fechaInic
     $fechaFin = $data['fechaFin'];
 
     // Actualizar la tabla candidato
-    $sqlCandidato = "UPDATE eleccion SET tipo = ?, fechaInicio = ?, fechaFin = ? WHERE idEleccion = ?";
+    $sqlCandidato = "UPDATE eleccion SET tipo = ?, estado = ?, fechaInicio = ?, fechaFin = ? WHERE idEleccion = ?";
     $stmtCandidato = $conexion->prepare($sqlCandidato);
-
+    
     if (!$stmtCandidato) {
         die(json_encode(['error' => 'Error en la preparación de la consulta de candidato']));
     }
-
-    $stmtCandidato->bind_param('sssi', $tipo, $fechaInicio, $fechaFin, $idEleccion);
+    
+    $stmtCandidato->bind_param('ssssi', $tipo, $estado, $fechaInicio, $fechaFin, $idEleccion);
+    
 
     if ($stmtCandidato->execute()) {
         if ($stmtCandidato->affected_rows > 0) {

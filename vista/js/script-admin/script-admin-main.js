@@ -22,7 +22,7 @@ export async function generarContenidoPorEleccion(eleccion) {
             await generarContenidoEleccionElecciones();
             break;
         case 'escrutinio':
-            await generarContenidoACescrutinio();
+            await generarContenidoEleccionAEscrutinio();
             break;
         default:
             console.log('Error');

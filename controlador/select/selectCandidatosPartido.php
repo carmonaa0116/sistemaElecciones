@@ -12,17 +12,17 @@ if (isset($data['idPartido'])) {
         die(json_encode(['error' => 'Connection failed: ' . $conn->connect_error]));
     }
 
-    // Preparar la consulta
-    $stmt = $conn->prepare("SELECT ca.idCandidato, ce.nombre, ca.idLocalidad, ca.idEleccion, ca.preferencia, ca.idPartido 
+    // Preparar la consulta con la coma corregida
+    $stmt = $conn->prepare("SELECT ca.idCandidato, ce.nombre, ce.apellido, ca.idLocalidad, ca.idEleccion, ca.preferencia, ca.idPartido 
                             FROM candidato ca 
                             JOIN censo ce ON ce.idCenso = ca.idCenso 
-                            WHERE idPartido = ? 
+                            WHERE ca.idPartido = ? 
                             ORDER BY ca.preferencia");
     $stmt->bind_param("i", $idPartido);
     $stmt->execute();
 
-    // Vincular las columnas a variables
-    $stmt->bind_result($idCandidato, $nombre, $idLocalidad, $idEleccion, $preferencia, $idPartido);
+    // Vincular las columnas a variables, agregando $apellido
+    $stmt->bind_result($idCandidato, $nombre, $apellido, $idLocalidad, $idEleccion, $preferencia, $idPartido);
 
     // Crear un array para almacenar los resultados
     $candidatos = [];
@@ -32,6 +32,7 @@ if (isset($data['idPartido'])) {
         $candidatos[] = [
             'idCandidato' => $idCandidato,
             'nombre' => $nombre,
+            'apellido' => $apellido,
             'idLocalidad' => $idLocalidad,
             'idEleccion' => $idEleccion,
             'preferencia' => $preferencia,

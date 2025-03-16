@@ -1,6 +1,5 @@
 <?php
 require_once '../../bd/conectar.php';
-
 header('Content-Type: application/json');
 
 $conexion = $conn;
@@ -9,42 +8,43 @@ if (!$conexion) {
     die(json_encode(['error' => 'Error de conexión: ' . mysqli_connect_error()]));
 }
 
-if (isset($_POST['inputIdPartido'], $_POST['inputNombre'], $_POST['inputSiglas'])) {
-    $idPartido = $_POST['inputIdPartido'];
-    $nombre = $_POST['inputNombre'];
-    $siglas = $_POST['inputSiglas'];
+// Obtener datos JSON desde la entrada
+$datos = json_decode(file_get_contents("php://input"), true);
 
-    // Verificar si se ha enviado una imagen
-    if (isset($_FILES['inputImagen']) && $_FILES['inputImagen']['error'] === UPLOAD_ERR_OK) {
-        $imagenBinaria = file_get_contents($_FILES['inputImagen']['tmp_name']);
+if (isset($datos['idPartido'], $datos['nombre'], $datos['siglas'])) {
+    $idPartido = $datos['idPartido'];
+    $nombre = $datos['nombre'];
+    $siglas = $datos['siglas'];
+    $imagen = isset($datos['imagen']) ? base64_decode($datos['imagen']) : null;
+
+    if ($imagen) {
         $sql = "UPDATE partido SET nombre = ?, siglas = ?, imagen = ? WHERE idPartido = ?";
         $stmt = $conexion->prepare($sql);
         
         if (!$stmt) {
-            die(json_encode(['error' => 'Error en la preparación de la consulta: ' . $conexion->error]));
+            echo json_encode(['error' => 'Error en la preparación de la consulta']);
+            exit;
         }
         
-        $stmt->bind_param('sssi', $nombre, $siglas, $imagenBinaria, $idPartido);
+        $stmt->bind_param('sssi', $nombre, $siglas, $imagen, $idPartido);
     } else {
-        // Si no se subió imagen, no actualizar la columna "imagen"
         $sql = "UPDATE partido SET nombre = ?, siglas = ? WHERE idPartido = ?";
         $stmt = $conexion->prepare($sql);
         
         if (!$stmt) {
-            die(json_encode(['error' => 'Error en la preparación de la consulta: ' . $conexion->error]));
+            echo json_encode(['error' => 'Error en la preparación de la consulta']);
+            exit;
         }
         
         $stmt->bind_param('ssi', $nombre, $siglas, $idPartido);
     }
 
-    // Ejecutar la consulta
     if ($stmt->execute()) {
         echo json_encode(['exito' => 'Partido actualizado correctamente']);
     } else {
-        echo json_encode(['error' => 'Error al actualizar el partido: ' . $stmt->error]);
+        echo json_encode(['error' => 'Error al actualizar el partido']);
     }
 
-    // Cerrar la consulta
     $stmt->close();
 } else {
     echo json_encode(['error' => 'Datos de entrada incompletos']);
